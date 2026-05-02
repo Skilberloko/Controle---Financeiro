@@ -302,6 +302,11 @@ tbody tr:hover td{background:var(--bg)}
 
 /* ── DIVIDER ──────────────────────────────────────────────── */
 .divider{height:1px;background:var(--border);margin:16px 0}
+.btn-banco{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg);color:var(--muted);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
+.btn-banco:hover{border-color:var(--text);color:var(--text)}
+.btn-banco.active{border-color:var(--blue);background:var(--blue-bg);color:var(--blue)}
+.saldo-hist{font-size:13px;font-weight:600}
+.saldo-pos{color:var(--green)}.saldo-neg{color:var(--red)}
 </style>
 </head>
 <body>
@@ -345,7 +350,7 @@ tbody tr:hover td{background:var(--bg)}
         <div class="avatar" id="user-avatar" style="background:#2563EB">L</div>
         <div class="user-info">
           <div class="name" id="user-name">Carregando...</div>
-          <div class="email" id="user-email"></div>
+          <div class="email" id="user-apelido" style="font-style:italic"></div>
         </div>
       </div>
       <div class="nav-section">
@@ -407,50 +412,118 @@ tbody tr:hover td{background:var(--bg)}
       <!-- LANÇAMENTOS -->
       <div id="page-lancamentos" class="page">
         <div class="page-title">Lançamentos</div>
-        <div class="page-sub">Registre entradas, saídas e investimentos</div>
-
-        <div class="person-tabs">
-          <button class="ptab active" onclick="setPessoa(this,'leo')">Léo</button>
-          <button class="ptab" onclick="setPessoa(this,'isa')">Isabela</button>
-        </div>
+        <div class="page-sub" id="lan-sub">Registre entradas e saídas</div>
 
         <div class="form-panel">
-          <h3 id="lan-form-title">Novo lançamento — Léo</h3>
+          <h3 id="lan-form-title">Novo lançamento</h3>
+
+          <!-- BOTÕES TIPO -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px">
+            <button id="btn-receita" onclick="setTipoLan('Entrada')" style="padding:12px;border-radius:var(--radius);border:2px solid var(--green);background:var(--green-bg);color:var(--green);font-size:14px;font-weight:600;cursor:pointer">+ Receita</button>
+            <button id="btn-despesa" onclick="setTipoLan('Saída')" style="padding:12px;border-radius:var(--radius);border:2px solid var(--border);background:var(--bg);color:var(--muted);font-size:14px;font-weight:600;cursor:pointer">− Despesa</button>
+            <button id="btn-invest" onclick="setTipoLan('Investimento')" style="padding:12px;border-radius:var(--radius);border:2px solid var(--border);background:var(--bg);color:var(--muted);font-size:14px;font-weight:600;cursor:pointer">↗ Invest.</button>
+          </div>
+
           <div class="form-row">
-            <div class="form-group"><label>Descrição</label><input id="l-desc" placeholder="ex: Salário, iFood, Farmácia..."></div>
+            <div class="form-group"><label>Descrição</label><input id="l-desc" placeholder="Ex: Salário, Supermercado..."></div>
             <div class="form-group"><label>Valor (R$)</label><input id="l-valor" type="number" step="0.01" placeholder="0,00"></div>
           </div>
-          <div class="form-row3">
-            <div class="form-group"><label>Tipo</label>
-              <select id="l-tipo">
-                <option value="Entrada">Entrada</option>
-                <option value="Saída" selected>Saída</option>
-                <option value="Investimento">Investimento</option>
-              </select>
-            </div>
-            <div class="form-group"><label>Categoria</label>
-              <select id="l-cat">
-                <option>Salário</option><option>Moradia</option><option>Alimentação</option>
-                <option>Transporte</option><option>Saúde</option><option>Lazer</option>
-                <option>Mercado</option><option>Assinaturas</option><option>Beleza</option>
-                <option>Desenvolvimento</option><option>Fatura Cartão</option><option>Dívida</option>
-                <option>Investimento</option><option>Outros</option>
-              </select>
-            </div>
+          <div class="form-row">
             <div class="form-group"><label>Data</label><input id="l-data" type="date"></div>
+            <div class="form-group"><label>Status</label>
+              <select id="l-status"><option>✅ Pago</option><option>⏳ Pendente</option><option>❌ Cancelado</option></select>
+            </div>
           </div>
           <div class="form-row">
-            <div class="form-group"><label>Status</label>
-              <select id="l-status">
-                <option>✅ Pago</option><option>⏳ Pendente</option><option>❌ Cancelado</option>
+            <div class="form-group"><label>Categoria</label>
+              <select id="l-cat" onchange="atualizarSubcategorias()"></select>
+            </div>
+            <div class="form-group"><label>Subcategoria</label>
+              <select id="l-subcat"></select>
+            </div>
+          </div>
+
+          <div id="bloco-pagamento" class="form-row">
+            <div class="form-group"><label>Forma de pagamento</label>
+              <select id="l-pagamento">
+                <option value="Pix">💸 Pix</option>
+                <option value="Débito">💳 Débito</option>
+                <option value="Crédito">💳 Crédito</option>
+                <option value="Boleto">🧾 Boleto</option>
+                <option value="Dinheiro">💵 Dinheiro</option>
+                <option value="Ticket / Vale">🎟 Ticket / Vale</option>
               </select>
             </div>
-            <div class="form-group"><label>Observação</label><input id="l-obs" placeholder="opcional"></div>
+            <div class="form-group"><label>Parcelas</label>
+              <select id="l-parcelas">
+                <option value="1">À vista</option>
+                <option value="2">2x</option><option value="3">3x</option><option value="4">4x</option>
+                <option value="5">5x</option><option value="6">6x</option><option value="7">7x</option>
+                <option value="8">8x</option><option value="9">9x</option><option value="10">10x</option>
+                <option value="11">11x</option><option value="12">12x</option>
+                <option value="18">18x</option><option value="24">24x</option><option value="36">36x</option>
+              </select>
+            </div>
           </div>
-          <div class="form-actions">
-            <button class="btn btn-primary" onclick="addLancamento()">+ Adicionar</button>
-            <button class="btn btn-secondary" onclick="limparFormLan()">Limpar</button>
+
+          <!-- BANCO com logo -->
+          <div class="form-group" style="margin-bottom:14px">
+            <label>Conta / Banco</label>
+            <div style="position:relative">
+              <select id="l-banco" style="padding-left:36px" onchange="atualizarLogoBanco()">
+                <option value="">— Selecione —</option>
+                <option value="Itaú">Itaú</option>
+                <option value="Nubank PF">Nubank PF</option>
+                <option value="Nubank PJ">Nubank PJ</option>
+                <option value="XP">XP Investimentos</option>
+                <option value="Bradesco">Bradesco</option>
+                <option value="Santander">Santander</option>
+                <option value="Caixa">Caixa Econômica</option>
+                <option value="Inter">Banco Inter</option>
+                <option value="C6">C6 Bank</option>
+                <option value="PicPay">PicPay</option>
+                <option value="Ticket">Ticket / VR</option>
+                <option value="Outro">Outro</option>
+              </select>
+              <img id="logo-banco-sel" src="" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:20px;height:20px;border-radius:4px;object-fit:contain;display:none">
+            </div>
           </div>
+
+          <!-- RECORRÊNCIA toggle -->
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px">
+            <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:12px">
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:20px">🔄</span>
+                <div>
+                  <div style="font-size:13px;font-weight:500">Lançamento recorrente</div>
+                  <div style="font-size:12px;color:var(--muted)">Repete automaticamente todo mês</div>
+                </div>
+              </div>
+              <div style="position:relative;width:44px;height:24px;flex-shrink:0">
+                <input type="checkbox" id="l-rec-flag" onchange="toggleRecorrencia()" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;margin:0;z-index:1">
+                <div id="toggle-track" style="width:44px;height:24px;border-radius:12px;background:var(--border);transition:background .2s">
+                  <div id="toggle-thumb" style="width:20px;height:20px;border-radius:50%;background:#fff;margin:2px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)"></div>
+                </div>
+              </div>
+            </label>
+            <div id="rec-opcoes" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+              <div class="form-row">
+                <div class="form-group"><label>Até quando</label>
+                  <select id="l-rec-ate">
+                    <option value="2026-12">Dezembro/2026</option>
+                    <option value="2027-06">Junho/2027</option>
+                    <option value="2027-12">Dezembro/2027</option>
+                  </select>
+                </div>
+                <div class="form-group"><label>Prévia</label>
+                  <div id="rec-preview" style="font-size:12px;color:var(--blue);padding:9px 12px;background:var(--blue-bg);border-radius:var(--radius)">Selecione a data</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" onclick="addLancamento()" style="width:100%;padding:13px;font-size:14px">Salvar lançamento</button>
+          <button class="btn btn-secondary" onclick="limparFormLan()" style="width:100%;padding:11px;margin-top:8px">Cancelar</button>
         </div>
 
         <div class="panel">
@@ -485,30 +558,55 @@ tbody tr:hover td{background:var(--bg)}
 
       <!-- EXTRATO -->
       <div id="page-extrato" class="page">
-        <div class="page-title">Extrato consolidado</div>
-        <div class="page-sub">Histórico de todas as contas do casal</div>
-        <div class="filters">
-          <select id="f-ext-mes" onchange="carregarExtrato()">
-            <option value="">Todos os meses</option>
-          </select>
-          <select id="f-ext-tipo" onchange="carregarExtrato()">
-            <option value="">Todos os tipos</option>
-            <option>Entrada</option><option>Saída</option><option>Investimento</option>
-          </select>
-          <select id="f-ext-pessoa" onchange="carregarExtrato()">
-            <option value="">Léo + Isabela</option>
-            <option value="leo">Só Léo</option>
-            <option value="isa">Só Isabela</option>
-          </select>
+        <div class="page-title">Extrato por conta</div>
+        <div class="page-sub">Movimentação de cada banco — histórico real jan→mai/2026</div>
+
+        <!-- TABS DOS BANCOS -->
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px">
+          <button class="btn-banco active" id="tab-todos" onclick="setExtratoBanco('todos',this)">
+            <span>📊</span> Todos
+          </button>
+          <button class="btn-banco" id="tab-itau" onclick="setExtratoBanco('itau',this)">
+            <img src="https://logo.clearbit.com/itau.com.br" onerror="this.style.display='none'" style="width:16px;height:16px;border-radius:3px"> Itaú
+          </button>
+          <button class="btn-banco" id="tab-nubank" onclick="setExtratoBanco('nubank',this)">
+            <img src="https://logo.clearbit.com/nubank.com.br" onerror="this.style.display='none'" style="width:16px;height:16px;border-radius:3px"> Nubank PF
+          </button>
+          <button class="btn-banco" id="tab-xp" onclick="setExtratoBanco('xp',this)">
+            <img src="https://logo.clearbit.com/xpi.com.br" onerror="this.style.display='none'" style="width:16px;height:16px;border-radius:3px"> XP
+          </button>
+          <button class="btn-banco" id="tab-meus" onclick="setExtratoBanco('meus',this)">
+            <span>👤</span> Meus lanç.
+          </button>
         </div>
-        <div class="cards-grid" id="ext-cards"></div>
+
+        <!-- HISTÓRICO REAL POR BANCO -->
+        <div id="extrato-banco-view">
+          <div class="cards-grid" id="ext-cards"></div>
+          <div class="panel" id="ext-historico-panel" style="display:none">
+            <h3 id="ext-historico-titulo">Resumo mensal</h3>
+            <div id="ext-historico-content"></div>
+          </div>
+        </div>
+
+        <div class="cards-grid" id="ext-cards-resumo" style="margin-top:0"></div>
+
         <div class="panel">
-          <h3>Lançamentos</h3>
+          <h3 id="ext-lista-titulo">Todos os lançamentos</h3>
+          <div class="filters" style="margin-bottom:12px">
+            <select id="f-ext-mes" onchange="carregarExtrato()">
+              <option value="">Todos os meses</option>
+            </select>
+            <select id="f-ext-tipo" onchange="carregarExtrato()">
+              <option value="">Todos os tipos</option>
+              <option>Entrada</option><option>Saída</option><option>Investimento</option>
+            </select>
+          </div>
           <div class="table-wrap">
             <table><thead><tr>
-              <th>Data</th><th>Pessoa</th><th>Descrição</th><th>Categoria</th><th>Tipo</th><th>Valor</th>
+              <th>Data</th><th>Lançado por</th><th>Descrição</th><th>Categoria</th><th>Tipo</th><th>Conta</th><th>Valor</th>
             </tr></thead>
-            <tbody id="t-extrato"><tr><td colspan="6" class="empty">Carregando...</td></tr></tbody>
+            <tbody id="t-extrato"><tr><td colspan="7" class="empty">Carregando...</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -811,9 +909,14 @@ async function iniciarApp(user) {
   // Perfil
   const { data: perfil } = await sb.from('profiles').select('*').eq('id', user.id).single();
   currentUserNome = perfil?.nome || user.email.split('@')[0];
+  const apelido = perfil?.apelido || '';
   const inicial = currentUserNome.charAt(0).toUpperCase();
   document.getElementById('user-name').textContent = currentUserNome;
-  document.getElementById('user-email').textContent = user.email;
+  // Mostra apelido se tiver, senão deixa vazio
+  const apelidoEl = document.getElementById('user-apelido');
+  if (apelidoEl) apelidoEl.textContent = apelido ? `"${apelido}"` : '';
+
+  document.getElementById('lan-form-title').textContent = `Novo lançamento — ${currentUserNome}`;
   document.getElementById('user-avatar').textContent = inicial;
 
   // Cor do avatar baseada no nome
@@ -823,6 +926,7 @@ async function iniciarApp(user) {
 
   document.getElementById('login-senha').value = '';
   document.getElementById('l-data').value = hoje();
+  setTipoLan('Saída'); // inicializar form
   preencherFiltrosMeses();
   await carregarTudo();
 }
@@ -851,14 +955,278 @@ function navTo(page) {
   else if (page === 'projecao') renderProjecao();
 }
 
-function setPessoa(btn, p) {
-  pessoaAtiva = p;
-  document.querySelectorAll('.ptab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('lan-form-title').textContent = 'Novo lançamento — ' + (p === 'leo' ? currentUserNome : 'Isabela');
-  document.getElementById('lan-list-title').textContent = 'Lançamentos de ' + (p === 'leo' ? currentUserNome : 'Isabela');
-  carregarLancamentos();
+// ═══════════════════════════════════════════════════════════
+// CATEGORIAS E SUBCATEGORIAS DINÂMICAS
+// ═══════════════════════════════════════════════════════════
+const CATS_ENTRADA = [
+  {cat:'💰 Receita',sub:['💼 Salário','⏩ Adiantamento','🎁 Décimo terceiro','🏖️ Férias','⭐ Bonificação','📅 Renda mensal','🏠 Aluguel recebido']},
+  {cat:'💻 Freelance',sub:['💡 Projeto pontual','🔄 Contrato fixo','📊 Consultoria']},
+  {cat:'📈 Investimento',sub:['🏦 Resgate CDB','📊 Resgate Ações','🏛️ Resgate Tesouro','₿ Cripto','🏢 FII']},
+  {cat:'🎁 Outros',sub:['💝 Presente recebido','♻️ Reembolso','🎰 Outros']},
+];
+const CATS_SAIDA = [
+  {cat:'🏠 Moradia',sub:['🏠 Aluguel','🏢 Condomínio','💡 Luz','💧 Água','🌡️ Gás','📡 Internet','📱 Telefone']},
+  {cat:'🛒 Alimentação',sub:['🛒 Supermercado','🍽️ Restaurante','🛵 Delivery','🥦 Feira','🥐 Padaria','🍔 Lanchonete','☕ Café']},
+  {cat:'🚗 Transporte',sub:['⛽ Gasolina','🚌 Transporte público','🚕 Aplicativo (Uber)','🅿️ Estacionamento','🔧 Manutenção','📋 IPVA/Licença']},
+  {cat:'❤️ Saúde',sub:['💊 Farmácia','🏥 Consulta','🦷 Dentista','🧪 Exame','🏋️ Academia']},
+  {cat:'📚 Educação',sub:['📖 Curso','🎓 Faculdade','📝 Material','🌐 Plataforma online']},
+  {cat:'🎮 Lazer',sub:['🎬 Cinema/Teatro','🎵 Show','🏖️ Viagem','🎮 Jogo','🍻 Bar/Balada']},
+  {cat:'👕 Vestuário',sub:['👗 Roupas','👟 Calçados','👜 Acessórios']},
+  {cat:'💅 Beleza',sub:['✂️ Cabelo','💅 Manicure','💄 Cosméticos','💆 Spa']},
+  {cat:'📺 Assinaturas',sub:['📺 Streaming','🎵 Música','☁️ Armazenamento','💪 App']},
+  {cat:'💳 Dívida/Empréstimo',sub:['🏦 Empréstimo bancário','💳 Parcelamento','👤 Dívida pessoal']},
+  {cat:'💳 Fatura Cartão',sub:['💳 Nubank','💳 Bradesco','💳 Itaú','💳 Outro cartão']},
+  {cat:'📦 Outros',sub:['🎁 Presente','🔧 Casa/Manutenção','🤷 Outros']},
+];
+const CATS_INVEST = [
+  {cat:'📈 Renda Variável',sub:['📊 Ações','🏢 FII','₿ Cripto','🌎 ETF']},
+  {cat:'🏦 Renda Fixa',sub:['🏦 CDB','🏛️ Tesouro Direto','📋 LCI/LCA','💰 Poupança']},
+  {cat:'💰 Outros',sub:['🏠 Imóvel','👥 Previdência','📦 Outros']},
+];
+
+const LOGOS_BANCO = {
+  'itaú':    'https://logo.clearbit.com/itau.com.br',
+  'itau':    'https://logo.clearbit.com/itau.com.br',
+  'nubank':  'https://logo.clearbit.com/nubank.com.br',
+  'xp':      'https://logo.clearbit.com/xpi.com.br',
+  'bradesco':'https://logo.clearbit.com/bradesco.com.br',
+  'santander':'https://logo.clearbit.com/santander.com.br',
+  'caixa':   'https://logo.clearbit.com/caixa.gov.br',
+  'inter':   'https://logo.clearbit.com/inter.co',
+  'c6':      'https://logo.clearbit.com/c6bank.com.br',
+  'picpay':  'https://logo.clearbit.com/picpay.com',
+  'ticket':  'https://logo.clearbit.com/ticket.com.br',
+  'vivo':    'https://logo.clearbit.com/vivo.com.br',
+  'netflix': 'https://logo.clearbit.com/netflix.com',
+  'spotify': 'https://logo.clearbit.com/spotify.com',
+  'amazon':  'https://logo.clearbit.com/amazon.com',
+  'disney':  'https://logo.clearbit.com/disneyplus.com',
+  'apple':   'https://logo.clearbit.com/apple.com',
+  'google':  'https://logo.clearbit.com/google.com',
+};
+
+function getLogo(nome) {
+  if (!nome) return null;
+  const k = nome.toLowerCase();
+  const match = Object.entries(LOGOS_BANCO).find(([key]) => k.includes(key));
+  return match ? match[1] : null;
 }
+
+let tipoAtual = 'Saída';
+
+function setTipoLan(tipo) {
+  tipoAtual = tipo;
+  const configs = {
+    'Entrada':     {id:'btn-receita', border:'var(--green)',  bg:'var(--green-bg)',  color:'var(--green)'},
+    'Saída':       {id:'btn-despesa', border:'var(--red)',    bg:'var(--red-bg)',    color:'var(--red)'},
+    'Investimento':{id:'btn-invest',  border:'var(--blue)',   bg:'var(--blue-bg)',   color:'var(--blue)'},
+  };
+  ['btn-receita','btn-despesa','btn-invest'].forEach(id => {
+    const b = document.getElementById(id);
+    if (!b) return;
+    b.style.borderColor = 'var(--border)';
+    b.style.background  = 'var(--bg)';
+    b.style.color       = 'var(--muted)';
+  });
+  const cfg = configs[tipo];
+  if (cfg) {
+    const b = document.getElementById(cfg.id);
+    if (b) { b.style.borderColor=cfg.border; b.style.background=cfg.bg; b.style.color=cfg.color; }
+  }
+  // Mostrar/ocultar forma de pagamento (só em Saída)
+  const blocoP = document.getElementById('bloco-pagamento');
+  if (blocoP) blocoP.style.display = tipo === 'Saída' ? 'grid' : 'none';
+  atualizarCategorias();
+}
+
+function atualizarCategorias() {
+  const sel = document.getElementById('l-cat');
+  if (!sel) return;
+  const lista = tipoAtual === 'Entrada' ? CATS_ENTRADA : tipoAtual === 'Investimento' ? CATS_INVEST : CATS_SAIDA;
+  sel.innerHTML = lista.map(c => `<option value="${c.cat}">${c.cat}</option>`).join('');
+  atualizarSubcategorias();
+}
+
+function atualizarSubcategorias() {
+  const catSel = document.getElementById('l-cat');
+  const subSel = document.getElementById('l-subcat');
+  if (!catSel || !subSel) return;
+  const cat = catSel.value;
+  const lista = tipoAtual === 'Entrada' ? CATS_ENTRADA : tipoAtual === 'Investimento' ? CATS_INVEST : CATS_SAIDA;
+  const found = lista.find(c => c.cat === cat);
+  subSel.innerHTML = (found?.sub || ['Outros']).map(s => `<option value="${s}">${s}</option>`).join('');
+}
+
+function atualizarLogoBanco() {
+  const sel  = document.getElementById('l-banco');
+  const img  = document.getElementById('logo-banco-sel');
+  if (!sel || !img) return;
+  const logo = getLogo(sel.value);
+  if (logo) {
+    img.src = logo; img.style.display = 'block';
+  } else {
+    img.style.display = 'none';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// EXTRATO POR BANCO — dados históricos reais
+// ═══════════════════════════════════════════════════════════
+const HISTORICO_BANCOS = {
+  itau: {
+    nome: 'Itaú', logo: 'https://logo.clearbit.com/itau.com.br',
+    cor: '#EC7000', saldo_atual: -569.20,
+    meses: [
+      {mes:'Jan/26', entradas:21503.78, saidas:20638.67, saldo:865.11},
+      {mes:'Fev/26', entradas:6358.18,  saidas:6004.68,  saldo:353.50},
+      {mes:'Mar/26', entradas:8448.14,  saidas:9416.31,  saldo:-968.17},
+      {mes:'Abr/26', entradas:13103.51, saidas:13957.87, saldo:-854.36},
+      {mes:'Mai/26*',entradas:3797.80,  saidas:3382.84,  saldo:-569.20},
+    ],
+    alertas: ['Conta usando limite bancário — R$ 569,20 negativos','Juros de limite acumulados jan–abr: R$ 156,16','Bradescard crescendo: R$2.507 → R$6.017 em abr'],
+  },
+  nubank: {
+    nome: 'Nubank PF', logo: 'https://logo.clearbit.com/nubank.com.br',
+    cor: '#820AD1', saldo_atual: 15.65,
+    meses: [
+      {mes:'Jan/26', entradas:25771.90, saidas:25571.90, saldo:200.00},
+      {mes:'Fev/26', entradas:2467.33,  saidas:2667.33,  saldo:0.00},
+      {mes:'Mar/26', entradas:5230.20,  saidas:5161.34,  saldo:68.86},
+      {mes:'Abr/26', entradas:6397.85,  saidas:6451.06,  saldo:15.65},
+    ],
+    alertas: ['Cartão PJ com fatura em aberto: R$ 578,70','Fatura PJ estava atrasada — R$ 68,55 de custo extra'],
+  },
+  xp: {
+    nome: 'XP Investimentos', logo: 'https://logo.clearbit.com/xpi.com.br',
+    cor: '#FF6200', saldo_atual: 0.00,
+    meses: [
+      {mes:'Jan/26', entradas:3954.54, saidas:3954.04, saldo:0.50},
+      {mes:'Fev/26', entradas:1164.19, saidas:1164.69, saldo:0.00},
+      {mes:'Mar/26', entradas:100.00,  saidas:99.50,   saldo:0.50},
+      {mes:'Abr/26', entradas:0,       saidas:0,       saldo:0.00},
+    ],
+    alertas: ['R$ 995 em apostas (Kaizen Gaming) jan–mar — gasto recorrente não categorizado'],
+  },
+};
+
+let extratoBancoAtivo = 'todos';
+
+function setExtratoBanco(banco, btn) {
+  extratoBancoAtivo = banco;
+  document.querySelectorAll('.btn-banco').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderExtratoBanco();
+  carregarExtrato();
+}
+
+function renderExtratoBanco() {
+  const panel = document.getElementById('ext-historico-panel');
+  const content = document.getElementById('ext-historico-content');
+  const titulo  = document.getElementById('ext-historico-titulo');
+  if (!panel || !content) return;
+
+  if (extratoBancoAtivo === 'todos' || extratoBancoAtivo === 'meus') {
+    // Cards resumo total
+    panel.style.display = 'none';
+    document.getElementById('ext-cards').innerHTML = '';
+    const total = Object.values(HISTORICO_BANCOS).reduce((a,b)=>a+b.saldo_atual,0);
+    document.getElementById('ext-cards-resumo').innerHTML = `
+      <div class="card ${HISTORICO_BANCOS.itau.saldo_atual>=0?'green':'red'}">
+        <div class="card-label" style="display:flex;align-items:center;gap:6px">
+          <img src="${HISTORICO_BANCOS.itau.logo}" style="width:16px;height:16px;border-radius:3px" onerror="this.style.display='none'"> Itaú
+        </div>
+        <div class="card-value ${HISTORICO_BANCOS.itau.saldo_atual>=0?'green':'red'}">${BRL(HISTORICO_BANCOS.itau.saldo_atual)}</div>
+      </div>
+      <div class="card ${HISTORICO_BANCOS.nubank.saldo_atual>=0?'green':'red'}">
+        <div class="card-label" style="display:flex;align-items:center;gap:6px">
+          <img src="${HISTORICO_BANCOS.nubank.logo}" style="width:16px;height:16px;border-radius:3px" onerror="this.style.display='none'"> Nubank PF
+        </div>
+        <div class="card-value ${HISTORICO_BANCOS.nubank.saldo_atual>=0?'green':'red'}">${BRL(HISTORICO_BANCOS.nubank.saldo_atual)}</div>
+      </div>
+      <div class="card ${HISTORICO_BANCOS.xp.saldo_atual>=0?'green':'red'}">
+        <div class="card-label" style="display:flex;align-items:center;gap:6px">
+          <img src="${HISTORICO_BANCOS.xp.logo}" style="width:16px;height:16px;border-radius:3px" onerror="this.style.display='none'"> XP
+        </div>
+        <div class="card-value ${HISTORICO_BANCOS.xp.saldo_atual>=0?'green':'red'}">${BRL(HISTORICO_BANCOS.xp.saldo_atual)}</div>
+      </div>
+      <div class="card ${total>=0?'green':'red'}">
+        <div class="card-label">Total consolidado</div>
+        <div class="card-value ${total>=0?'green':'red'}">${BRL(total)}</div>
+      </div>`;
+    return;
+  }
+
+  const banco = HISTORICO_BANCOS[extratoBancoAtivo];
+  if (!banco) return;
+
+  panel.style.display = 'block';
+  document.getElementById('ext-cards-resumo').innerHTML = '';
+  document.getElementById('ext-cards').innerHTML = `
+    <div class="card ${banco.saldo_atual>=0?'green':'red'}">
+      <div class="card-label" style="display:flex;align-items:center;gap:6px">
+        <img src="${banco.logo}" style="width:16px;height:16px;border-radius:3px" onerror="this.style.display='none'"> Saldo atual
+      </div>
+      <div class="card-value ${banco.saldo_atual>=0?'green':'red'}">${BRL(banco.saldo_atual)}</div>
+    </div>
+    <div class="card blue"><div class="card-label">Total entradas (período)</div><div class="card-value blue">${BRL(banco.meses.reduce((a,m)=>a+m.entradas,0))}</div></div>
+    <div class="card red"><div class="card-label">Total saídas (período)</div><div class="card-value red">${BRL(banco.meses.reduce((a,m)=>a+m.saidas,0))}</div></div>
+  `;
+
+  titulo.innerHTML = `<img src="${banco.logo}" style="width:16px;height:16px;border-radius:3px;vertical-align:middle;margin-right:6px" onerror="this.style.display='none'">${banco.nome} — Movimentação Mensal`;
+
+  content.innerHTML = `
+    <div style="overflow-x:auto;margin-bottom:14px">
+      <table style="min-width:500px">
+        <thead><tr>
+          <th>Mês</th><th>Entradas</th><th>Saídas</th><th>Saldo do mês</th>
+        </tr></thead>
+        <tbody>
+          ${banco.meses.map(m => `<tr>
+            <td style="font-weight:500">${m.mes}</td>
+            <td style="color:var(--green);font-weight:500">${BRL(m.entradas)}</td>
+            <td style="color:var(--red);font-weight:500">${BRL(m.saidas)}</td>
+            <td style="font-weight:600;color:${m.saldo>=0?'var(--green)':'var(--red)'}">${BRL(m.saldo)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    ${banco.alertas.length ? `
+      <div style="background:var(--amber-bg);border:1px solid var(--amber-light);border-radius:var(--radius);padding:12px 14px">
+        <div style="font-size:12px;font-weight:600;color:var(--amber);margin-bottom:6px">⚠️ Alertas identificados</div>
+        ${banco.alertas.map(a => `<div style="font-size:12px;color:var(--amber);margin-bottom:3px">• ${a}</div>`).join('')}
+      </div>` : ''}
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════
+// RECORRÊNCIA
+// ═══════════════════════════════════════════════════════════
+function toggleRecorrencia() {
+  const ativo = document.getElementById('l-rec-flag').checked;
+  const reco  = document.getElementById('rec-opcoes');
+  const track = document.getElementById('toggle-track');
+  const thumb = document.getElementById('toggle-thumb');
+  if (reco)  reco.style.display = ativo ? 'block' : 'none';
+  if (track) track.style.background = ativo ? 'var(--blue)' : 'var(--border)';
+  if (thumb) thumb.style.transform  = ativo ? 'translateX(20px)' : 'translateX(0)';
+  if (ativo) atualizarPreviewRecorrencia();
+}
+
+function atualizarPreviewRecorrencia() {
+  const data  = document.getElementById('l-data').value;
+  const ate   = document.getElementById('l-rec-ate').value;
+  if (!data || !ate) return;
+  const [anoI, mesI] = data.split('-').map(Number);
+  const [anoF, mesF] = ate.split('-').map(Number);
+  let count = (anoF - anoI) * 12 + (mesF - mesI);
+  if (count < 0) count = 0;
+  const preview = document.getElementById('rec-preview');
+  if (preview) preview.textContent = `Serão criados ${count + 1} lançamentos (${data.slice(0,7)} até ${ate})`;
+}
+
+document.addEventListener('change', e => {
+  if (e.target.id === 'l-rec-ate' || e.target.id === 'l-data') atualizarPreviewRecorrencia();
+});
 
 // ═══════════════════════════════════════════════════════════
 // TOAST
@@ -1009,28 +1377,55 @@ async function renderChartMensal() {
 // LANÇAMENTOS
 // ═══════════════════════════════════════════════════════════
 async function addLancamento() {
-  const desc  = document.getElementById('l-desc').value.trim();
-  const valor = parseFloat(document.getElementById('l-valor').value);
-  const tipo  = document.getElementById('l-tipo').value;
-  const cat   = document.getElementById('l-cat').value;
-  const data  = document.getElementById('l-data').value || hoje();
+  const desc   = document.getElementById('l-desc').value.trim();
+  const valor  = parseFloat(document.getElementById('l-valor').value);
+  const tipo   = document.getElementById('l-tipo').value;
+  const cat    = document.getElementById('l-cat').value;
+  const data   = document.getElementById('l-data').value || hoje();
   const status = document.getElementById('l-status').value;
-  const obs   = document.getElementById('l-obs').value.trim();
+  const obs    = document.getElementById('l-obs').value.trim();
+  const recFlag = document.getElementById('l-rec-flag').checked;
+  const recAte  = document.getElementById('l-rec-ate')?.value || '';
 
   if (!desc || !valor || valor <= 0) { toast('Preencha descrição e valor', 'error'); return; }
 
   const valorFinal = tipo === 'Saída' ? -Math.abs(valor) : Math.abs(valor);
 
-  const { error } = await sb.from('lancamentos').insert({
-    user_id: currentUser.id,
-    lancado_por: currentUserNome,
-    descricao: desc, valor: valorFinal,
-    tipo, categoria: cat, data, status, observacao: obs
-  });
+  if (recFlag && recAte) {
+    // Criar lançamentos para todos os meses até a data limite
+    const [anoI, mesI, diaI] = data.split('-').map(Number);
+    const [anoF, mesF]       = recAte.split('-').map(Number);
+    const inserts = [];
+    let a = anoI, m = mesI;
+    while (a < anoF || (a === anoF && m <= mesF)) {
+      const diasMes = new Date(a, m, 0).getDate();
+      const d = String(Math.min(diaI, diasMes)).padStart(2,'0');
+      const dataLan = `${a}-${String(m).padStart(2,'0')}-${d}`;
+      inserts.push({
+        user_id: currentUser.id, lancado_por: currentUserNome,
+        descricao: desc, valor: valorFinal, tipo, categoria: cat,
+        data: dataLan, status, observacao: obs, recorrente: 'mensal'
+      });
+      m++; if (m > 12) { m = 1; a++; }
+    }
+    const { error } = await sb.from('lancamentos').insert(inserts);
+    if (error) { toast('Erro ao salvar: ' + error.message, 'error'); return; }
+    toast(`${inserts.length} lançamentos criados até ${recAte}!`);
+  } else {
+    const pagamento = document.getElementById('l-pagamento')?.value || '';
+    const parcelas  = document.getElementById('l-parcelas')?.value || '1';
+    const banco     = document.getElementById('l-banco')?.value || '';
+    const { error } = await sb.from('lancamentos').insert({
+      user_id: currentUser.id, lancado_por: currentUserNome,
+      descricao: desc, valor: valorFinal,
+      tipo, categoria: cat, data, status, observacao: obs,
+      recorrente: recFlag ? 'mensal' : 'nao',
+      forma_pagamento: pagamento, parcelas: parseInt(parcelas), conta_nome: banco
+    });
+    if (error) { toast('Erro ao salvar: ' + error.message, 'error'); return; }
+    toast('Lançamento adicionado!');
+  }
 
-  if (error) { toast('Erro ao salvar: ' + error.message, 'error'); return; }
-
-  toast('Lançamento adicionado!');
   limparFormLan();
   await carregarLancamentos();
   await carregarDashboard();
@@ -1041,6 +1436,17 @@ function limparFormLan() {
   document.getElementById('l-valor').value = '';
   document.getElementById('l-obs').value = '';
   document.getElementById('l-data').value = hoje();
+  const flag = document.getElementById('l-rec-flag');
+  if (flag) flag.checked = false;
+  const reco = document.getElementById('rec-opcoes');
+  if (reco) reco.style.display = 'none';
+  const track = document.getElementById('toggle-track');
+  if (track) { track.style.background='var(--border)'; }
+  const thumb = document.getElementById('toggle-thumb');
+  if (thumb) thumb.style.transform='translateX(0)';
+  const logo = document.getElementById('logo-banco-sel');
+  if (logo) logo.style.display='none';
+  setTipoLan('Saída');
 }
 
 async function carregarLancamentos() {
@@ -1103,9 +1509,10 @@ async function deletarLancamento(id) {
 // EXTRATO CONSOLIDADO
 // ═══════════════════════════════════════════════════════════
 async function carregarExtrato() {
+  renderExtratoBanco();
   const mes    = document.getElementById('f-ext-mes')?.value || mesMes();
   const tipo   = document.getElementById('f-ext-tipo')?.value || '';
-  const pessoa = document.getElementById('f-ext-pessoa')?.value || '';
+  const pessoa = '';
 
   let q = sb.from('lancamentos').select('*').order('data', {ascending:false}).limit(500);
   if (mes)  q = q.eq('mes', mes);
@@ -1132,10 +1539,11 @@ async function carregarExtrato() {
         const cor = l.tipo==='Entrada'?'green':l.tipo==='Investimento'?'blue':'red';
         return `<tr>
           <td>${fmtData(l.data)}</td>
-          <td><span class="badge gray" style="font-size:10px">${l.user_id === currentUser.id ? currentUserNome : 'Isabela'}</span></td>
+          <td><span class="badge ${l.lancado_por?.toLowerCase().includes('leo')||l.lancado_por?.toLowerCase().includes('léo')?'blue':'purple'}" style="font-size:10px">${l.lancado_por||'—'}</span></td>
           <td>${l.descricao}</td>
           <td><span class="badge gray">${l.categoria}</span></td>
           <td><span class="badge ${cor}">${l.tipo}</span></td>
+          <td style="font-size:11px;color:var(--muted)">${l.conta_nome||'—'}</td>
           <td style="font-weight:600;color:var(--${cor})">${BRL(l.valor)}</td>
         </tr>`;
       }).join('')
