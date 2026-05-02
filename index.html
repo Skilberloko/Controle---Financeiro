@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle Financeiro — Léo & Isa</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── RESET & BASE ─────────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F8F9FA;--surface:#FFFFFF;--border:#E9ECEF;
+  --text:#1A1D23;--muted:#6B7280;--hint:#9CA3AF;
+  --green:#059669;--green-bg:#ECFDF5;--green-light:#D1FAE5;
+  --red:#DC2626;--red-bg:#FEF2F2;--red-light:#FEE2E2;
+  --amber:#D97706;--amber-bg:#FFFBEB;--amber-light:#FDE68A;
+  --blue:#2563EB;--blue-bg:#EFF6FF;--blue-light:#DBEAFE;
+  --purple:#7C3AED;--purple-bg:#F5F3FF;--purple-light:#EDE9FE;
+  --radius:10px;--radius-lg:14px;--shadow:0 1px 3px rgba(0,0,0,.08);
+  --nav-w:220px;
+}
+[data-theme=dark]{
+  --bg:#0F1117;--surface:#1A1D23;--border:#2D3139;
+  --text:#F1F3F5;--muted:#9CA3AF;--hint:#6B7280;
+  --green-bg:#052E16;--green-light:#14532D;
+  --red-bg:#450A0A;--red-light:#7F1D1D;
+  --amber-bg:#431407;--amber-light:#78350F;
+  --blue-bg:#1E3A5F;--blue-light:#1E40AF;
+  --purple-bg:#2E1065;--purple-light:#4C1D95;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+input,select,textarea,button{font-family:inherit}
+
+/* ── LOGIN ────────────────────────────────────────────────── */
+#login-screen{
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;padding:24px;
+}
+.login-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:40px;width:100%;max-width:400px;
+  box-shadow:0 4px 24px rgba(0,0,0,.06);
+}
+.login-logo{
+  display:flex;align-items:center;gap:10px;margin-bottom:28px;
+}
+.login-logo .icon{
+  width:40px;height:40px;border-radius:10px;
+  background:linear-gradient(135deg,#2563EB,#7C3AED);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;color:#fff;
+}
+.login-logo h1{font-size:18px;font-weight:600;color:var(--text)}
+.login-logo p{font-size:12px;color:var(--muted)}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.field input{
+  width:100%;padding:10px 14px;font-size:14px;
+  border:1px solid var(--border);border-radius:var(--radius);
+  background:var(--bg);color:var(--text);
+  transition:border-color .15s;
+}
+.field input:focus{outline:none;border-color:var(--blue)}
+.btn-full{
+  width:100%;padding:12px;font-size:14px;font-weight:500;
+  background:var(--blue);color:#fff;border:none;
+  border-radius:var(--radius);cursor:pointer;
+  transition:opacity .15s;margin-top:4px;
+}
+.btn-full:hover{opacity:.9}
+.login-error{
+  background:var(--red-bg);border:1px solid var(--red-light);
+  border-radius:var(--radius);padding:10px 14px;
+  font-size:13px;color:var(--red);margin-bottom:14px;display:none;
+}
+
+/* ── APP LAYOUT ───────────────────────────────────────────── */
+#app-screen{display:none}
+.layout{display:flex;min-height:100vh}
+
+/* ── SIDEBAR NAV ──────────────────────────────────────────── */
+.sidebar{
+  width:var(--nav-w);background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+  flex-shrink:0;
+}
+.sidebar-header{padding:20px 16px 12px;border-bottom:1px solid var(--border)}
+.sidebar-logo{display:flex;align-items:center;gap:8px}
+.sidebar-logo .icon{
+  width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg,#2563EB,#7C3AED);
+  display:flex;align-items:center;justify-content:center;font-size:14px;
+}
+.sidebar-logo span{font-size:14px;font-weight:600}
+.sidebar-user{
+  padding:12px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+}
+.avatar{
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:600;color:#fff;flex-shrink:0;
+}
+.user-info .name{font-size:13px;font-weight:500}
+.user-info .email{font-size:11px;color:var(--muted)}
+.nav-section{padding:8px 8px 4px}
+.nav-label{font-size:10px;font-weight:600;color:var(--hint);text-transform:uppercase;letter-spacing:.8px;padding:0 8px;margin-bottom:4px}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 8px;border-radius:8px;
+  font-size:13px;color:var(--muted);cursor:pointer;
+  transition:all .12s;margin-bottom:1px;
+}
+.nav-item:hover{background:var(--bg);color:var(--text)}
+.nav-item.active{background:var(--blue-bg);color:var(--blue);font-weight:500}
+.nav-item .ni{font-size:16px;width:20px;text-align:center}
+.sidebar-footer{margin-top:auto;padding:12px 8px;border-top:1px solid var(--border)}
+.theme-btn,.logout-btn{
+  display:flex;align-items:center;gap:8px;width:100%;
+  padding:8px;border-radius:8px;border:none;background:none;
+  font-size:13px;color:var(--muted);cursor:pointer;
+  transition:all .12s;
+}
+.theme-btn:hover,.logout-btn:hover{background:var(--bg);color:var(--text)}
+
+/* ── MAIN CONTENT ─────────────────────────────────────────── */
+.main{flex:1;overflow-y:auto;padding:28px 32px;max-width:1100px}
+.page{display:none}.page.active{display:block}
+.page-title{font-size:20px;font-weight:600;margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--muted);margin-bottom:24px}
+
+/* ── CARDS ────────────────────────────────────────────────── */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px}
+.card.green{border-left:3px solid var(--green)}
+.card.red{border-left:3px solid var(--red)}
+.card.amber{border-left:3px solid var(--amber)}
+.card.blue{border-left:3px solid var(--blue)}
+.card.purple{border-left:3px solid var(--purple)}
+.card-label{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.card-value{font-size:22px;font-weight:600;color:var(--text)}
+.card-value.green{color:var(--green)}
+.card-value.red{color:var(--red)}
+.card-value.amber{color:var(--amber)}
+.card-value.blue{color:var(--blue)}
+.card-value.purple{color:var(--purple)}
+.card-sub{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* ── STATUS BAR ───────────────────────────────────────────── */
+.status-bar{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 16px;border-radius:var(--radius);
+  font-size:13px;font-weight:500;margin-bottom:20px;
+}
+.status-bar.ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-light)}
+.status-bar.warn{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-light)}
+.status-bar.danger{background:var(--red-bg);color:var(--red);border:1px solid var(--red-light)}
+
+/* ── GRID PANELS ──────────────────────────────────────────── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;margin-bottom:18px}
+.panel h3{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px}
+
+/* ── TABLE ────────────────────────────────────────────────── */
+.table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{
+  padding:10px 14px;text-align:left;font-size:11px;font-weight:600;
+  color:var(--muted);text-transform:uppercase;letter-spacing:.4px;
+  background:var(--bg);border-bottom:1px solid var(--border);
+}
+td{padding:11px 14px;border-bottom:1px solid var(--border);color:var(--text)}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--bg)}
+
+/* ── BADGES ───────────────────────────────────────────────── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
+.badge.green{background:var(--green-bg);color:var(--green)}
+.badge.red{background:var(--red-bg);color:var(--red)}
+.badge.amber{background:var(--amber-bg);color:var(--amber)}
+.badge.blue{background:var(--blue-bg);color:var(--blue)}
+.badge.purple{background:var(--purple-bg);color:var(--purple)}
+.badge.gray{background:var(--bg);color:var(--muted);border:1px solid var(--border)}
+
+/* ── FORMS ────────────────────────────────────────────────── */
+.form-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 22px;margin-bottom:18px}
+.form-panel h3{font-size:14px;font-weight:600;margin-bottom:16px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.form-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.form-row4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group label{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.form-group input,.form-group select,.form-group textarea{
+  padding:9px 12px;font-size:13px;border:1px solid var(--border);
+  border-radius:var(--radius);background:var(--bg);color:var(--text);
+  transition:border-color .15s;
+}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:var(--blue)}
+.form-actions{display:flex;gap:10px;margin-top:4px}
+.btn{padding:9px 18px;font-size:13px;font-weight:500;border-radius:var(--radius);cursor:pointer;transition:all .15s;border:1px solid transparent;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn-primary:hover{opacity:.9}
+.btn-secondary{background:var(--bg);color:var(--muted);border-color:var(--border)}
+.btn-secondary:hover{color:var(--text);border-color:var(--text)}
+.btn-danger{background:var(--red-bg);color:var(--red);border-color:var(--red-light)}
+.btn-danger:hover{opacity:.85}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-icon{padding:6px;border-radius:6px;line-height:1}
+
+/* ── PERSON TABS ──────────────────────────────────────────── */
+.person-tabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:0}
+.ptab{
+  padding:9px 16px;border-radius:8px 8px 0 0;
+  font-size:13px;font-weight:500;color:var(--muted);
+  cursor:pointer;border:none;background:none;
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+  transition:all .12s;
+}
+.ptab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.ptab:hover:not(.active){color:var(--text)}
+
+/* ── BAR CHART ────────────────────────────────────────────── */
+.bar-item{margin-bottom:12px}
+.bar-header{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px}
+.bar-track{height:7px;background:var(--border);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .4s}
+
+/* ── PROGRESS ─────────────────────────────────────────────── */
+.progress-item{margin-bottom:16px}
+.progress-header{display:flex;justify-content:space-between;margin-bottom:6px}
+.progress-name{font-size:13px;font-weight:500}
+.progress-val{font-size:13px;color:var(--red);font-weight:500}
+.progress-sub{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px}
+.progress-track{height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.progress-fill{height:100%;background:var(--green);border-radius:4px;transition:width .5s}
+
+/* ── CONTA CARD ───────────────────────────────────────────── */
+.conta-item{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px 0;border-bottom:1px solid var(--border);
+}
+.conta-item:last-child{border:none}
+.conta-info .cn{font-size:13px;font-weight:500}
+.conta-info .ct{font-size:11px;color:var(--muted)}
+.conta-saldo{font-size:15px;font-weight:600}
+
+/* ── LOADING ──────────────────────────────────────────────── */
+.loader{display:flex;align-items:center;justify-content:center;padding:40px;color:var(--muted);font-size:13px}
+.spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .6s linear infinite;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── EMPTY STATE ──────────────────────────────────────────── */
+.empty{padding:40px;text-align:center;color:var(--muted);font-size:13px}
+.empty-icon{font-size:32px;margin-bottom:10px}
+.empty p{line-height:1.6}
+
+/* ── TOAST ────────────────────────────────────────────────── */
+.toast{
+  position:fixed;bottom:24px;right:24px;z-index:9999;
+  background:var(--text);color:var(--surface);
+  padding:12px 18px;border-radius:var(--radius);
+  font-size:13px;font-weight:500;
+  transform:translateY(100px);opacity:0;
+  transition:all .25s;pointer-events:none;
+}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{background:var(--green)}
+.toast.error{background:var(--red)}
+
+/* ── MODAL ────────────────────────────────────────────────── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;
+  display:none;align-items:center;justify-content:center;padding:24px;
+}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius-lg);padding:24px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.modal-header h3{font-size:15px;font-weight:600}
+.modal-close{background:none;border:none;font-size:18px;color:var(--muted);cursor:pointer;padding:4px}
+
+/* ── CHART ────────────────────────────────────────────────── */
+.chart-wrap{position:relative;width:100%}
+
+/* ── RESPONSIVE ───────────────────────────────────────────── */
+@media(max-width:768px){
+  .sidebar{display:none}
+  .main{padding:16px}
+  .grid2,.grid3{grid-template-columns:1fr}
+  .form-row,.form-row3,.form-row4{grid-template-columns:1fr}
+  .cards-grid{grid-template-columns:1fr 1fr}
+}
+
+/* ── FILTERS ──────────────────────────────────────────────── */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.filters select{padding:6px 10px;font-size:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text)}
+
+/* ── DIVIDER ──────────────────────────────────────────────── */
+.divider{height:1px;background:var(--border);margin:16px 0}
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN ──────────────────────────────────────────────── -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="icon">💰</div>
+      <div>
+        <h1>Léo & Isa</h1>
+        <p>Controle financeiro do casal</p>
+      </div>
+    </div>
+    <div class="login-error" id="login-error"></div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="seu@email.com" autocomplete="email">
+    </div>
+    <div class="field">
+      <label>Senha</label>
+      <input type="password" id="login-senha" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-full" onclick="fazerLogin()">Entrar</button>
+  </div>
+</div>
+
+<!-- ── APP ────────────────────────────────────────────────── -->
+<div id="app-screen">
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="icon">💰</div>
+          <span>Léo & Isa</span>
+        </div>
+      </div>
+      <div class="sidebar-user">
+        <div class="avatar" id="user-avatar" style="background:#2563EB">L</div>
+        <div class="user-info">
+          <div class="name" id="user-name">Carregando...</div>
+          <div class="email" id="user-email"></div>
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Visão geral</div>
+        <div class="nav-item active" onclick="navTo('dashboard')"><span class="ni">📊</span>Dashboard</div>
+        <div class="nav-item" onclick="navTo('extrato')"><span class="ni">📋</span>Extrato</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Lançamentos</div>
+        <div class="nav-item" onclick="navTo('lancamentos')"><span class="ni">➕</span>Lançamentos</div>
+        <div class="nav-item" onclick="navTo('fixas')"><span class="ni">🔁</span>Fixas mensais</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Finanças</div>
+        <div class="nav-item" onclick="navTo('cartoes')"><span class="ni">💳</span>Cartões</div>
+        <div class="nav-item" onclick="navTo('contas')"><span class="ni">🏦</span>Contas</div>
+        <div class="nav-item" onclick="navTo('dividas')"><span class="ni">📊</span>Dívidas</div>
+        <div class="nav-item" onclick="navTo('projecao')"><span class="ni">📅</span>Projeção</div>
+      </div>
+      <div class="sidebar-footer">
+        <button class="theme-btn" onclick="toggleTheme()"><span>🌙</span><span id="theme-label">Modo escuro</span></button>
+        <button class="logout-btn" onclick="fazerLogout()"><span>🚪</span>Sair</button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <!-- DASHBOARD -->
+      <div id="page-dashboard" class="page active">
+        <div class="page-title">Dashboard</div>
+        <div class="page-sub" id="dash-sub">Visão consolidada do casal</div>
+        <div id="dash-status" class="status-bar ok">Carregando dados...</div>
+        <div class="cards-grid" id="dash-cards">
+          <div class="loader"><div class="spinner"></div>Carregando...</div>
+        </div>
+        <div class="grid2">
+          <div>
+            <div class="panel">
+              <h3>Saldo por conta</h3>
+              <div id="dash-contas"><div class="loader"><div class="spinner"></div></div></div>
+            </div>
+          </div>
+          <div>
+            <div class="panel">
+              <h3>Gastos por categoria — mês atual</h3>
+              <div id="dash-cats"><div class="empty"><div class="empty-icon">📂</div><p>Nenhum gasto este mês</p></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Evolução mensal — últimos lançamentos</h3>
+          <div class="chart-wrap" style="height:220px">
+            <canvas id="chart-mensal" role="img" aria-label="Evolução de entradas e saídas"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- LANÇAMENTOS -->
+      <div id="page-lancamentos" class="page">
+        <div class="page-title">Lançamentos</div>
+        <div class="page-sub">Registre entradas, saídas e investimentos</div>
+
+        <div class="person-tabs">
+          <button class="ptab active" onclick="setPessoa(this,'leo')">Léo</button>
+          <button class="ptab" onclick="setPessoa(this,'isa')">Isabela</button>
+        </div>
+
+        <div class="form-panel">
+          <h3 id="lan-form-title">Novo lançamento — Léo</h3>
+          <div class="form-row">
+            <div class="form-group"><label>Descrição</label><input id="l-desc" placeholder="ex: Salário, iFood, Farmácia..."></div>
+            <div class="form-group"><label>Valor (R$)</label><input id="l-valor" type="number" step="0.01" placeholder="0,00"></div>
+          </div>
+          <div class="form-row3">
+            <div class="form-group"><label>Tipo</label>
+              <select id="l-tipo">
+                <option value="Entrada">Entrada</option>
+                <option value="Saída" selected>Saída</option>
+                <option value="Investimento">Investimento</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Categoria</label>
+              <select id="l-cat">
+                <option>Salário</option><option>Moradia</option><option>Alimentação</option>
+                <option>Transporte</option><option>Saúde</option><option>Lazer</option>
+                <option>Mercado</option><option>Assinaturas</option><option>Beleza</option>
+                <option>Desenvolvimento</option><option>Fatura Cartão</option><option>Dívida</option>
+                <option>Investimento</option><option>Outros</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Data</label><input id="l-data" type="date"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Status</label>
+              <select id="l-status">
+                <option>✅ Pago</option><option>⏳ Pendente</option><option>❌ Cancelado</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Observação</label><input id="l-obs" placeholder="opcional"></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="addLancamento()">+ Adicionar</button>
+            <button class="btn btn-secondary" onclick="limparFormLan()">Limpar</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3 id="lan-list-title">Lançamentos de Léo</h3>
+          <div class="filters">
+            <select id="f-lan-mes" onchange="carregarLancamentos()">
+              <option value="">Todos os meses</option>
+            </select>
+            <select id="f-lan-tipo" onchange="carregarLancamentos()">
+              <option value="">Todos os tipos</option>
+              <option>Entrada</option><option>Saída</option><option>Investimento</option>
+            </select>
+            <select id="f-lan-cat" onchange="carregarLancamentos()">
+              <option value="">Todas categorias</option>
+              <option>Salário</option><option>Moradia</option><option>Alimentação</option>
+              <option>Transporte</option><option>Saúde</option><option>Lazer</option>
+              <option>Mercado</option><option>Assinaturas</option><option>Beleza</option>
+              <option>Desenvolvimento</option><option>Fatura Cartão</option><option>Dívida</option>
+              <option>Investimento</option><option>Outros</option>
+            </select>
+          </div>
+          <div id="lan-resumo" class="cards-grid" style="margin-bottom:16px"></div>
+          <div class="table-wrap">
+            <table><thead><tr>
+              <th>Data</th><th>Descrição</th><th>Categoria</th><th>Tipo</th><th>Valor</th><th>Status</th><th></th>
+            </tr></thead>
+            <tbody id="t-lancamentos"><tr><td colspan="7" class="empty">Carregando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXTRATO -->
+      <div id="page-extrato" class="page">
+        <div class="page-title">Extrato consolidado</div>
+        <div class="page-sub">Histórico de todas as contas do casal</div>
+        <div class="filters">
+          <select id="f-ext-mes" onchange="carregarExtrato()">
+            <option value="">Todos os meses</option>
+          </select>
+          <select id="f-ext-tipo" onchange="carregarExtrato()">
+            <option value="">Todos os tipos</option>
+            <option>Entrada</option><option>Saída</option><option>Investimento</option>
+          </select>
+          <select id="f-ext-pessoa" onchange="carregarExtrato()">
+            <option value="">Léo + Isabela</option>
+            <option value="leo">Só Léo</option>
+            <option value="isa">Só Isabela</option>
+          </select>
+        </div>
+        <div class="cards-grid" id="ext-cards"></div>
+        <div class="panel">
+          <h3>Lançamentos</h3>
+          <div class="table-wrap">
+            <table><thead><tr>
+              <th>Data</th><th>Pessoa</th><th>Descrição</th><th>Categoria</th><th>Tipo</th><th>Valor</th>
+            </tr></thead>
+            <tbody id="t-extrato"><tr><td colspan="6" class="empty">Carregando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- FIXAS -->
+      <div id="page-fixas" class="page">
+        <div class="page-title">Fixas mensais</div>
+        <div class="page-sub">Receitas e despesas que se repetem todo mês — cadastre uma vez</div>
+
+        <div class="form-panel">
+          <h3>Nova fixa</h3>
+          <div class="form-row3">
+            <div class="form-group"><label>Descrição</label><input id="fx-desc" placeholder="ex: Aluguel, Salário..."></div>
+            <div class="form-group"><label>Valor (R$)</label><input id="fx-valor" type="number" step="0.01"></div>
+            <div class="form-group"><label>Tipo</label>
+              <select id="fx-tipo">
+                <option value="receita">Receita</option>
+                <option value="despesa">Despesa</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row3">
+            <div class="form-group"><label>Categoria</label>
+              <select id="fx-cat">
+                <option>Salário</option><option>Moradia</option><option>Transporte</option>
+                <option>Saúde</option><option>Assinaturas</option><option>Desenvolvimento</option>
+                <option>Dívida</option><option>Benefício</option><option>Outros</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Dia do mês</label><input id="fx-dia" type="number" min="1" max="31" placeholder="15"></div>
+            <div class="form-group"><label>Conta / Cartão</label><input id="fx-conta" placeholder="ex: Itaú, Nubank..."></div>
+          </div>
+          <div class="form-group" style="margin-bottom:12px"><label>Observação</label><input id="fx-obs" placeholder="opcional"></div>
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="addFixa()">+ Adicionar</button>
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div class="panel">
+            <h3>Receitas fixas</h3>
+            <div id="lista-receitas-fixas"><div class="loader"><div class="spinner"></div></div></div>
+          </div>
+          <div class="panel">
+            <h3>Despesas fixas</h3>
+            <div id="lista-despesas-fixas"><div class="loader"><div class="spinner"></div></div></div>
+          </div>
+        </div>
+
+        <div class="cards-grid" id="fixas-totais"></div>
+      </div>
+
+      <!-- CARTÕES -->
+      <div id="page-cartoes" class="page">
+        <div class="page-title">Cartões de crédito</div>
+        <div class="page-sub">Limites, faturas e parcelamentos ativos</div>
+
+        <div class="form-panel">
+          <h3>Cadastrar cartão</h3>
+          <div class="form-row4">
+            <div class="form-group"><label>Nome</label><input id="ct-nome" placeholder="ex: Nubank PF"></div>
+            <div class="form-group"><label>Limite (R$)</label><input id="ct-limite" type="number" step="0.01"></div>
+            <div class="form-group"><label>Fatura atual (R$)</label><input id="ct-fatura" type="number" step="0.01" value="0"></div>
+            <div class="form-group"><label>Dia vencimento</label><input id="ct-vct" type="number" min="1" max="31"></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="addCartao()">+ Adicionar</button>
+          </div>
+        </div>
+
+        <div id="cartoes-grid" class="grid2"></div>
+
+        <div class="panel">
+          <h3>Parcelamentos ativos</h3>
+          <div class="form-panel" style="margin-bottom:14px;padding:14px 16px">
+            <div style="font-size:13px;font-weight:500;margin-bottom:12px">Adicionar parcela</div>
+            <div class="form-row">
+              <div class="form-group"><label>Cartão</label><select id="p-cartao"></select></div>
+              <div class="form-group"><label>Descrição</label><input id="p-desc" placeholder="ex: iPhone 12x"></div>
+            </div>
+            <div class="form-row3">
+              <div class="form-group"><label>Valor total (R$)</label><input id="p-total" type="number" step="0.01"></div>
+              <div class="form-group"><label>Valor parcela (R$)</label><input id="p-parcela" type="number" step="0.01"></div>
+              <div class="form-group"><label>Total parcelas</label><input id="p-ntotal" type="number" min="1"></div>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary btn-sm" onclick="addParcela()">+ Adicionar parcela</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Cartão</th><th>Descrição</th><th>Parcela</th><th>Valor</th><th>Total restante</th><th>Status</th></tr></thead>
+            <tbody id="t-parcelas"><tr><td colspan="6" class="empty">Nenhuma parcela ativa</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTAS -->
+      <div id="page-contas" class="page">
+        <div class="page-title">Contas bancárias</div>
+        <div class="page-sub">Saldos e benefícios (VA/VR)</div>
+
+        <div class="form-panel">
+          <h3>Nova conta</h3>
+          <div class="form-row3">
+            <div class="form-group"><label>Nome</label><input id="co-nome" placeholder="ex: Nubank PF, Itaú..."></div>
+            <div class="form-group"><label>Banco</label><input id="co-banco" placeholder="ex: Nubank, Itaú, XP..."></div>
+            <div class="form-group"><label>Saldo atual (R$)</label><input id="co-saldo" type="number" step="0.01"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Tipo</label>
+              <select id="co-tipo">
+                <option value="corrente">Conta Corrente</option>
+                <option value="poupanca">Poupança</option>
+                <option value="investimento">Investimento</option>
+                <option value="beneficio">Benefício (VA/VR)</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Titular</label>
+              <select id="co-titular">
+                <option value="proprio">Minha conta</option>
+                <option value="casal">Casal (compartilhada)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="addConta()">+ Adicionar conta</button>
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div class="panel">
+            <h3>Minhas contas</h3>
+            <div id="lista-contas"></div>
+          </div>
+          <div class="panel">
+            <h3>Benefícios (VA/VR)</h3>
+            <div id="lista-beneficios"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Saldo total</h3>
+          <div class="cards-grid" id="contas-totais"></div>
+        </div>
+      </div>
+
+      <!-- DÍVIDAS -->
+      <div id="page-dividas" class="page">
+        <div class="page-title">Dívidas e empréstimos</div>
+        <div class="page-sub">Controle de saldo devedor e parcelas</div>
+
+        <div class="form-panel">
+          <h3>Nova dívida / empréstimo</h3>
+          <div class="form-row3">
+            <div class="form-group"><label>Descrição</label><input id="dv-desc" placeholder="ex: Empréstimo Itaú"></div>
+            <div class="form-group"><label>Credor</label><input id="dv-credor" placeholder="ex: Itaú, Nubank..."></div>
+            <div class="form-group"><label>Titular</label><input id="dv-titular" placeholder="ex: Léo, Casal..."></div>
+          </div>
+          <div class="form-row4">
+            <div class="form-group"><label>Saldo devedor (R$)</label><input id="dv-saldo" type="number" step="0.01"></div>
+            <div class="form-group"><label>Parcela mensal (R$)</label><input id="dv-parcela" type="number" step="0.01"></div>
+            <div class="form-group"><label>Parcelas restantes</label><input id="dv-restam" type="number" min="1"></div>
+            <div class="form-group"><label>Dia vencimento</label><input id="dv-dia" type="number" min="1" max="31"></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="addDivida()">+ Adicionar dívida</button>
+          </div>
+        </div>
+
+        <div class="cards-grid" id="div-cards"></div>
+
+        <div class="panel">
+          <h3>Dívidas ativas</h3>
+          <div class="table-wrap">
+            <table><thead><tr>
+              <th>Descrição</th><th>Titular</th><th>Credor</th><th>Saldo devedor</th><th>Parcela/mês</th><th>Restam</th><th></th>
+            </tr></thead>
+            <tbody id="t-dividas"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Progresso de quitação</h3>
+          <div id="div-progress"></div>
+        </div>
+      </div>
+
+      <!-- PROJEÇÃO -->
+      <div id="page-projecao" class="page">
+        <div class="page-title">Projeção financeira</div>
+        <div class="page-sub">Veja quando vai ficar negativo nos próximos 60 dias</div>
+
+        <div class="form-panel">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Saldo inicial (hoje)</label>
+              <input id="proj-saldo" type="number" step="0.01" value="0" oninput="renderProjecao()">
+            </div>
+            <div class="form-group">
+              <label>Alerta crítico — saldo abaixo de R$</label>
+              <input id="proj-alerta" type="number" value="500" oninput="renderProjecao()">
+            </div>
+          </div>
+        </div>
+
+        <div class="cards-grid" id="proj-cards"></div>
+
+        <div class="panel">
+          <div class="chart-wrap" style="height:220px">
+            <canvas id="chart-projecao" role="img" aria-label="Projeção de saldo nos próximos 60 dias"></canvas>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Próximos 30 dias</h3>
+          <div class="table-wrap">
+            <table><thead><tr>
+              <th>Data</th><th>Entrada prevista</th><th>Saída prevista</th><th>Saldo do dia</th><th>Saldo acumulado</th><th>Status</th>
+            </tr></thead>
+            <tbody id="t-projecao"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- MODAL EDITAR -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)fecharModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-title">Editar</h3>
+      <button class="modal-close" onclick="fecharModal()">✕</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// SUPABASE INIT
+// ═══════════════════════════════════════════════════════════
+const SUPA_URL = 'https://zyhwmhzlssauvpuajjsm.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp5aHdtaHpsc3NhdXZwdWFqanNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3NDkxOTAsImV4cCI6MjA5MzMyNTE5MH0.lMKjdr883E0g904WEgTO13A3r-KhKh_76aU8yr2AyjA';
+const { createClient } = supabase;
+const sb = createClient(SUPA_URL, SUPA_KEY);
+
+// ═══════════════════════════════════════════════════════════
+// ESTADO GLOBAL
+// ═══════════════════════════════════════════════════════════
+let currentUser = null;
+let currentUserNome = '';
+let pessoaAtiva = 'leo'; // leo = usuário logado, isa = parceiro
+let todosUsuarios = {}; // { uid: nome }
+let chartMensal = null, chartProj = null;
+
+const BRL = v => {
+  const neg = v < 0;
+  const s = Math.abs(v).toLocaleString('pt-BR', {minimumFractionDigits:2,maximumFractionDigits:2});
+  return (neg ? '-' : '') + 'R$ ' + s;
+};
+const fmtData = d => d ? d.split('-').reverse().join('/') : '';
+const hoje = () => new Date().toISOString().slice(0,10);
+const mesMes = () => new Date().toISOString().slice(0,7);
+
+// ═══════════════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════════════
+async function fazerLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const senha = document.getElementById('login-senha').value;
+  const errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
+  if (!email || !senha) { errEl.textContent = 'Preencha email e senha.'; errEl.style.display = 'block'; return; }
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: senha });
+  if (error) { errEl.textContent = error.message === 'Invalid login credentials' ? 'Email ou senha incorretos.' : error.message; errEl.style.display = 'block'; return; }
+  await iniciarApp(data.user);
+}
+
+async function fazerLogout() {
+  await sb.auth.signOut();
+  document.getElementById('app-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  currentUser = null;
+}
+
+async function iniciarApp(user) {
+  currentUser = user;
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+
+  // Perfil
+  const { data: perfil } = await sb.from('profiles').select('*').eq('id', user.id).single();
+  currentUserNome = perfil?.nome || user.email.split('@')[0];
+  const inicial = currentUserNome.charAt(0).toUpperCase();
+  document.getElementById('user-name').textContent = currentUserNome;
+  document.getElementById('user-email').textContent = user.email;
+  document.getElementById('user-avatar').textContent = inicial;
+
+  // Cor do avatar baseada no nome
+  const cores = ['#2563EB','#7C3AED','#059669','#D97706','#DC2626'];
+  const idx = currentUserNome.charCodeAt(0) % cores.length;
+  document.getElementById('user-avatar').style.background = cores[idx];
+
+  document.getElementById('login-senha').value = '';
+  document.getElementById('l-data').value = hoje();
+  preencherFiltrosMeses();
+  await carregarTudo();
+}
+
+// Verificar sessão ao carregar
+sb.auth.getSession().then(({ data: { session } }) => {
+  if (session) iniciarApp(session.user);
+});
+
+// ═══════════════════════════════════════════════════════════
+// NAVEGAÇÃO
+// ═══════════════════════════════════════════════════════════
+function navTo(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  event.currentTarget.classList.add('active');
+  // Carregar dados da página
+  if (page === 'dashboard') carregarDashboard();
+  else if (page === 'lancamentos') carregarLancamentos();
+  else if (page === 'extrato') carregarExtrato();
+  else if (page === 'fixas') carregarFixas();
+  else if (page === 'cartoes') carregarCartoes();
+  else if (page === 'contas') carregarContas();
+  else if (page === 'dividas') carregarDividas();
+  else if (page === 'projecao') renderProjecao();
+}
+
+function setPessoa(btn, p) {
+  pessoaAtiva = p;
+  document.querySelectorAll('.ptab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('lan-form-title').textContent = 'Novo lançamento — ' + (p === 'leo' ? currentUserNome : 'Isabela');
+  document.getElementById('lan-list-title').textContent = 'Lançamentos de ' + (p === 'leo' ? currentUserNome : 'Isabela');
+  carregarLancamentos();
+}
+
+// ═══════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════
+function toast(msg, tipo = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + tipo + ' show';
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ═══════════════════════════════════════════════════════════
+// MESES para filtros
+// ═══════════════════════════════════════════════════════════
+function preencherFiltrosMeses() {
+  const meses = [];
+  const agora = new Date();
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(agora.getFullYear(), agora.getMonth() - i, 1);
+    const val = d.toISOString().slice(0,7);
+    const label = d.toLocaleDateString('pt-BR', {month:'short', year:'numeric'});
+    meses.push({ val, label });
+  }
+  ['f-lan-mes','f-ext-mes','f-ext-mes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    meses.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m.val; opt.textContent = m.label;
+      if (m.val === mesMes()) opt.selected = true;
+      el.appendChild(opt);
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// CARREGAR TUDO
+// ═══════════════════════════════════════════════════════════
+async function carregarTudo() {
+  await carregarDashboard();
+}
+
+// ═══════════════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════════════
+async function carregarDashboard() {
+  const mes = mesMes();
+
+  // Buscar lançamentos do mês — usuário atual
+  const { data: meus } = await sb.from('lancamentos')
+    .select('*').eq('mes', mes).eq('user_id', currentUser.id);
+
+  // Buscar todos (o casal completo)
+  const { data: todos } = await sb.from('lancamentos')
+    .select('*').eq('mes', mes);
+
+  const calc = (lans, tipo) => (lans || []).filter(l => l.tipo === tipo).reduce((a,l) => a + Math.abs(l.valor), 0);
+
+  const entradas = calc(todos, 'Entrada');
+  const saidas   = calc(todos, 'Saída');
+  const invest   = calc(todos, 'Investimento');
+  const saldo    = entradas - saidas - invest;
+
+  // Status
+  const st = document.getElementById('dash-status');
+  if (saldo < 0) { st.className = 'status-bar danger'; st.textContent = '🔴 Saldo negativo — ação urgente necessária'; }
+  else if (saldo < 500) { st.className = 'status-bar warn'; st.textContent = '🟡 Saldo muito baixo — cuidado com novos gastos'; }
+  else { st.className = 'status-bar ok'; st.textContent = '🟢 Situação controlada — continue monitorando'; }
+
+  const hoje_full = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+  document.getElementById('dash-sub').textContent = `Visão consolidada · ${hoje_full}`;
+
+  // Cards
+  document.getElementById('dash-cards').innerHTML = `
+    <div class="card green"><div class="card-label">Entradas do mês</div><div class="card-value green">${BRL(entradas)}</div></div>
+    <div class="card red"><div class="card-label">Saídas do mês</div><div class="card-value red">${BRL(saidas)}</div></div>
+    <div class="card blue"><div class="card-label">Investimentos</div><div class="card-value blue">${BRL(invest)}</div></div>
+    <div class="card ${saldo>=0?'green':'red'}"><div class="card-label">Saldo livre</div><div class="card-value ${saldo>=0?'green':'red'}">${BRL(saldo)}</div></div>
+  `;
+
+  // Contas
+  const { data: contas } = await sb.from('contas').select('*').eq('user_id', currentUser.id).order('nome');
+  const totalContas = (contas||[]).reduce((a,c) => a + c.saldo, 0);
+  document.getElementById('dash-contas').innerHTML = (contas && contas.length)
+    ? contas.map(c => {
+        const cor = c.saldo < 0 ? 'red' : c.saldo < 100 ? 'amber' : 'green';
+        return `<div class="conta-item">
+          <div class="conta-info"><div class="cn">${c.nome}</div><div class="ct">${c.banco || ''} · ${c.tipo}</div></div>
+          <div class="conta-saldo" style="color:var(--${cor})">${BRL(c.saldo)}</div>
+        </div>`;
+      }).join('') + `<div class="divider"></div><div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600"><span>Total</span><span style="color:var(--${totalContas>=0?'green':'red'})">${BRL(totalContas)}</span></div>`
+    : '<div class="empty"><p>Nenhuma conta cadastrada.<br>Vá em Contas para adicionar.</p></div>';
+
+  // Gastos por categoria
+  const saidas_arr = (todos || []).filter(l => l.tipo === 'Saída');
+  const cats = {};
+  saidas_arr.forEach(l => { cats[l.categoria] = (cats[l.categoria]||0) + Math.abs(l.valor); });
+  const sorted = Object.entries(cats).sort((a,b) => b[1]-a[1]).slice(0,8);
+  const maxV = sorted[0]?.[1] || 1;
+  const cores = ['#2563EB','#DC2626','#059669','#D97706','#7C3AED','#0891B2','#BE185D','#1D4ED8'];
+  document.getElementById('dash-cats').innerHTML = sorted.length
+    ? sorted.map(([cat,val],i) => `
+        <div class="bar-item">
+          <div class="bar-header"><span>${cat}</span><span style="font-weight:500">${BRL(val)}</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(val/maxV*100).toFixed(1)}%;background:${cores[i%cores.length]}"></div></div>
+        </div>`).join('')
+    : '<div class="empty"><p>Nenhum gasto este mês</p></div>';
+
+  // Gráfico mensal
+  await renderChartMensal();
+}
+
+async function renderChartMensal() {
+  const meses = [];
+  const agora = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(agora.getFullYear(), agora.getMonth() - i, 1);
+    meses.push(d.toISOString().slice(0,7));
+  }
+
+  const { data: lans } = await sb.from('lancamentos').select('mes,tipo,valor')
+    .in('mes', meses).order('mes');
+
+  const labels = meses.map(m => {
+    const [y,mo] = m.split('-');
+    return new Date(y, mo-1, 1).toLocaleDateString('pt-BR',{month:'short'});
+  });
+  const ent = meses.map(m => (lans||[]).filter(l => l.mes===m && l.tipo==='Entrada').reduce((a,l) => a+l.valor, 0));
+  const sai = meses.map(m => (lans||[]).filter(l => l.mes===m && l.tipo==='Saída').reduce((a,l) => a+Math.abs(l.valor), 0));
+
+  const ctx = document.getElementById('chart-mensal').getContext('2d');
+  if (chartMensal) chartMensal.destroy();
+  chartMensal = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [
+      { label: 'Entradas', data: ent, backgroundColor: '#059669', borderRadius: 5 },
+      { label: 'Saídas',   data: sai, backgroundColor: '#DC2626', borderRadius: 5 }
+    ]},
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { ticks: { callback: v => 'R$'+Math.round(v/1000)+'k', font:{size:11} }, grid:{color:'rgba(0,0,0,.05)'} }, x:{grid:{display:false}} }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// LANÇAMENTOS
+// ═══════════════════════════════════════════════════════════
+async function addLancamento() {
+  const desc  = document.getElementById('l-desc').value.trim();
+  const valor = parseFloat(document.getElementById('l-valor').value);
+  const tipo  = document.getElementById('l-tipo').value;
+  const cat   = document.getElementById('l-cat').value;
+  const data  = document.getElementById('l-data').value || hoje();
+  const status = document.getElementById('l-status').value;
+  const obs   = document.getElementById('l-obs').value.trim();
+
+  if (!desc || !valor || valor <= 0) { toast('Preencha descrição e valor', 'error'); return; }
+
+  const valorFinal = tipo === 'Saída' ? -Math.abs(valor) : Math.abs(valor);
+
+  const { error } = await sb.from('lancamentos').insert({
+    user_id: currentUser.id,
+    descricao: desc, valor: valorFinal,
+    tipo, categoria: cat, data, status, observacao: obs
+  });
+
+  if (error) { toast('Erro ao salvar: ' + error.message, 'error'); return; }
+
+  toast('Lançamento adicionado!');
+  limparFormLan();
+  await carregarLancamentos();
+  await carregarDashboard();
+}
+
+function limparFormLan() {
+  document.getElementById('l-desc').value = '';
+  document.getElementById('l-valor').value = '';
+  document.getElementById('l-obs').value = '';
+  document.getElementById('l-data').value = hoje();
+}
+
+async function carregarLancamentos() {
+  const mes  = document.getElementById('f-lan-mes')?.value || mesMes();
+  const tipo = document.getElementById('f-lan-tipo')?.value || '';
+  const cat  = document.getElementById('f-lan-cat')?.value || '';
+
+  let q = sb.from('lancamentos').select('*').eq('user_id', currentUser.id).order('data', {ascending:false});
+  if (mes)  q = q.eq('mes', mes);
+  if (tipo) q = q.eq('tipo', tipo);
+  if (cat)  q = q.eq('categoria', cat);
+  q = q.limit(200);
+
+  const { data: lans, error } = await q;
+  if (error) { console.error(error); return; }
+
+  // Resumo do mês
+  const ent = (lans||[]).filter(l => l.tipo==='Entrada').reduce((a,l) => a+Math.abs(l.valor), 0);
+  const sai = (lans||[]).filter(l => l.tipo==='Saída').reduce((a,l) => a+Math.abs(l.valor), 0);
+  const inv = (lans||[]).filter(l => l.tipo==='Investimento').reduce((a,l) => a+Math.abs(l.valor), 0);
+  document.getElementById('lan-resumo').innerHTML = `
+    <div class="card green"><div class="card-label">Entradas</div><div class="card-value green">${BRL(ent)}</div></div>
+    <div class="card red"><div class="card-label">Saídas</div><div class="card-value red">${BRL(sai)}</div></div>
+    <div class="card blue"><div class="card-label">Investimentos</div><div class="card-value blue">${BRL(inv)}</div></div>
+    <div class="card ${ent-sai-inv>=0?'green':'red'}"><div class="card-label">Saldo</div><div class="card-value ${ent-sai-inv>=0?'green':'red'}">${BRL(ent-sai-inv)}</div></div>
+  `;
+
+  const tbody = document.getElementById('t-lancamentos');
+  if (!lans || !lans.length) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty"><div class="empty-icon">📭</div><p>Nenhum lançamento encontrado</p></div></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = lans.map(l => {
+    const tipoBadge = l.tipo === 'Entrada' ? 'green' : l.tipo === 'Investimento' ? 'blue' : 'red';
+    const cor = l.tipo === 'Entrada' ? 'green' : l.tipo === 'Investimento' ? 'blue' : 'red';
+    return `<tr>
+      <td>${fmtData(l.data)}</td>
+      <td style="font-weight:500">${l.descricao}</td>
+      <td><span class="badge gray">${l.categoria}</span></td>
+      <td><span class="badge ${tipoBadge}">${l.tipo}</span></td>
+      <td style="font-weight:600;color:var(--${cor})">${BRL(l.valor)}</td>
+      <td>${l.status||''}</td>
+      <td><button class="btn btn-danger btn-sm btn-icon" onclick="deletarLancamento('${l.id}')">🗑</button></td>
+    </tr>`;
+  }).join('');
+}
+
+async function deletarLancamento(id) {
+  if (!confirm('Remover este lançamento?')) return;
+  const { error } = await sb.from('lancamentos').delete().eq('id', id).eq('user_id', currentUser.id);
+  if (error) { toast('Erro ao remover', 'error'); return; }
+  toast('Removido!');
+  await carregarLancamentos();
+  await carregarDashboard();
+}
+
+// ═══════════════════════════════════════════════════════════
+// EXTRATO CONSOLIDADO
+// ═══════════════════════════════════════════════════════════
+async function carregarExtrato() {
+  const mes    = document.getElementById('f-ext-mes')?.value || mesMes();
+  const tipo   = document.getElementById('f-ext-tipo')?.value || '';
+  const pessoa = document.getElementById('f-ext-pessoa')?.value || '';
+
+  let q = sb.from('lancamentos').select('*').order('data', {ascending:false}).limit(500);
+  if (mes)  q = q.eq('mes', mes);
+  if (tipo) q = q.eq('tipo', tipo);
+  if (pessoa === 'leo') q = q.eq('user_id', currentUser.id);
+  // Se pessoa === 'isa', precisaríamos do outro user_id — mostra todos por ora
+
+  const { data: lans } = await q;
+
+  const ent = (lans||[]).filter(l => l.tipo==='Entrada').reduce((a,l) => a+Math.abs(l.valor), 0);
+  const sai = (lans||[]).filter(l => l.tipo==='Saída').reduce((a,l) => a+Math.abs(l.valor), 0);
+  const inv = (lans||[]).filter(l => l.tipo==='Investimento').reduce((a,l) => a+Math.abs(l.valor), 0);
+
+  document.getElementById('ext-cards').innerHTML = `
+    <div class="card green"><div class="card-label">Entradas</div><div class="card-value green">${BRL(ent)}</div></div>
+    <div class="card red"><div class="card-label">Saídas</div><div class="card-value red">${BRL(sai)}</div></div>
+    <div class="card blue"><div class="card-label">Investimentos</div><div class="card-value blue">${BRL(inv)}</div></div>
+    <div class="card ${ent-sai-inv>=0?'green':'red'}"><div class="card-label">Saldo</div><div class="card-value ${ent-sai-inv>=0?'green':'red'}">${BRL(ent-sai-inv)}</div></div>
+  `;
+
+  const tbody = document.getElementById('t-extrato');
+  tbody.innerHTML = (lans && lans.length)
+    ? lans.map(l => {
+        const cor = l.tipo==='Entrada'?'green':l.tipo==='Investimento'?'blue':'red';
+        return `<tr>
+          <td>${fmtData(l.data)}</td>
+          <td><span class="badge gray" style="font-size:10px">${l.user_id === currentUser.id ? currentUserNome : 'Isabela'}</span></td>
+          <td>${l.descricao}</td>
+          <td><span class="badge gray">${l.categoria}</span></td>
+          <td><span class="badge ${cor}">${l.tipo}</span></td>
+          <td style="font-weight:600;color:var(--${cor})">${BRL(l.valor)}</td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="6"><div class="empty"><p>Nenhum lançamento encontrado</p></div></td></tr>';
+}
+
+// ═══════════════════════════════════════════════════════════
+// FIXAS
+// ═══════════════════════════════════════════════════════════
+async function addFixa() {
+  const desc  = document.getElementById('fx-desc').value.trim();
+  const valor = parseFloat(document.getElementById('fx-valor').value);
+  const tipo  = document.getElementById('fx-tipo').value;
+  const cat   = document.getElementById('fx-cat').value;
+  const dia   = parseInt(document.getElementById('fx-dia').value) || null;
+  const conta = document.getElementById('fx-conta').value.trim();
+  const obs   = document.getElementById('fx-obs').value.trim();
+
+  if (!desc || !valor || valor <= 0) { toast('Preencha descrição e valor', 'error'); return; }
+
+  const { error } = await sb.from('fixas').insert({
+    user_id: currentUser.id, descricao: desc, valor,
+    tipo, categoria: cat, dia_mes: dia, conta_nome: conta, observacao: obs
+  });
+
+  if (error) { toast('Erro: ' + error.message, 'error'); return; }
+  toast('Fixa adicionada!');
+  ['fx-desc','fx-valor','fx-dia','fx-conta','fx-obs'].forEach(id => document.getElementById(id).value = '');
+  await carregarFixas();
+}
+
+async function carregarFixas() {
+  const { data: fixas } = await sb.from('fixas').select('*')
+    .eq('user_id', currentUser.id).eq('ativo', true).order('tipo').order('valor', {ascending:false});
+
+  const receitas  = (fixas||[]).filter(f => f.tipo === 'receita');
+  const despesas  = (fixas||[]).filter(f => f.tipo === 'despesa');
+  const totRec    = receitas.reduce((a,f) => a+f.valor, 0);
+  const totDesp   = despesas.reduce((a,f) => a+f.valor, 0);
+
+  const renderFixaItem = (f) => `
+    <div class="conta-item">
+      <div class="conta-info">
+        <div class="cn">${f.descricao} ${f.dia_mes?`<span style="font-size:11px;color:var(--muted)">· dia ${f.dia_mes}</span>`:''}</div>
+        <div class="ct">${f.categoria}${f.conta_nome?' · '+f.conta_nome:''}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="conta-saldo" style="color:var(--${f.tipo==='receita'?'green':'red'})">${BRL(f.valor)}</span>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deletarFixa('${f.id}')">🗑</button>
+      </div>
+    </div>`;
+
+  document.getElementById('lista-receitas-fixas').innerHTML = receitas.length
+    ? receitas.map(renderFixaItem).join('') + `<div class="divider"></div><div style="display:flex;justify-content:space-between;font-weight:600;font-size:13px"><span>Total</span><span style="color:var(--green)">${BRL(totRec)}</span></div>`
+    : '<div class="empty"><p>Nenhuma receita fixa</p></div>';
+
+  document.getElementById('lista-despesas-fixas').innerHTML = despesas.length
+    ? despesas.map(renderFixaItem).join('') + `<div class="divider"></div><div style="display:flex;justify-content:space-between;font-weight:600;font-size:13px"><span>Total</span><span style="color:var(--red)">${BRL(totDesp)}</span></div>`
+    : '<div class="empty"><p>Nenhuma despesa fixa</p></div>';
+
+  document.getElementById('fixas-totais').innerHTML = `
+    <div class="card green"><div class="card-label">Total receitas fixas</div><div class="card-value green">${BRL(totRec)}</div></div>
+    <div class="card red"><div class="card-label">Total despesas fixas</div><div class="card-value red">${BRL(totDesp)}</div></div>
+    <div class="card ${totRec-totDesp>=0?'green':'red'}"><div class="card-label">Saldo fixo estimado</div><div class="card-value ${totRec-totDesp>=0?'green':'red'}">${BRL(totRec-totDesp)}</div></div>
+    <div class="card amber"><div class="card-label">% comprometida</div><div class="card-value amber">${totRec>0?(totDesp/totRec*100).toFixed(0)+'%':'—'}</div></div>
+  `;
+}
+
+async function deletarFixa(id) {
+  if (!confirm('Remover esta fixa?')) return;
+  await sb.from('fixas').delete().eq('id', id).eq('user_id', currentUser.id);
+  toast('Removido!');
+  await carregarFixas();
+}
+
+// ═══════════════════════════════════════════════════════════
+// CARTÕES
+// ═══════════════════════════════════════════════════════════
+async function addCartao() {
+  const nome  = document.getElementById('ct-nome').value.trim();
+  const limite = parseFloat(document.getElementById('ct-limite').value) || 0;
+  const fatura = parseFloat(document.getElementById('ct-fatura').value) || 0;
+  const vct   = parseInt(document.getElementById('ct-vct').value) || 10;
+  if (!nome) { toast('Informe o nome do cartão', 'error'); return; }
+  const { error } = await sb.from('cartoes').insert({ user_id: currentUser.id, nome, limite, fatura_atual: fatura, dia_vencimento: vct });
+  if (error) { toast('Erro: ' + error.message, 'error'); return; }
+  toast('Cartão adicionado!');
+  ['ct-nome','ct-limite','ct-fatura','ct-vct'].forEach(id => document.getElementById(id).value = '');
+  await carregarCartoes();
+}
+
+async function addParcela() {
+  const cartao_id = document.getElementById('p-cartao').value;
+  const desc      = document.getElementById('p-desc').value.trim();
+  const total     = parseFloat(document.getElementById('p-total').value) || 0;
+  const parcela   = parseFloat(document.getElementById('p-parcela').value) || 0;
+  const ntotal    = parseInt(document.getElementById('p-ntotal').value) || 1;
+  if (!desc || !total) { toast('Preencha os campos', 'error'); return; }
+  const { error } = await sb.from('parcelas_cartao').insert({
+    user_id: currentUser.id, cartao_id: cartao_id || null,
+    descricao: desc, valor_total: total, valor_parcela: parcela,
+    parcela_atual: 1, total_parcelas: ntotal
+  });
+  if (error) { toast('Erro: ' + error.message, 'error'); return; }
+  toast('Parcela adicionada!');
+  await carregarCartoes();
+}
+
+async function carregarCartoes() {
+  const { data: cartoes } = await sb.from('cartoes').select('*').eq('user_id', currentUser.id).order('nome');
+  const { data: parcelas } = await sb.from('parcelas_cartao').select('*,cartoes(nome)').eq('user_id', currentUser.id).order('created_at',{ascending:false});
+
+  // Preencher select de cartão
+  const sel = document.getElementById('p-cartao');
+  sel.innerHTML = (cartoes||[]).map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+
+  // Grid de cartões
+  document.getElementById('cartoes-grid').innerHTML = (cartoes && cartoes.length)
+    ? cartoes.map(c => {
+        const pct = c.limite > 0 ? Math.min(c.fatura_atual / c.limite * 100, 100) : 0;
+        const cor  = pct > 80 ? 'red' : pct > 50 ? 'amber' : 'green';
+        const disp = c.limite - c.fatura_atual;
+        return `<div class="panel" style="margin-bottom:0">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+            <div>
+              <div style="font-size:15px;font-weight:600">${c.nome}</div>
+              <div style="font-size:12px;color:var(--muted)">Venc. dia ${c.dia_vencimento}</div>
+            </div>
+            <span class="badge ${cor}">${pct>80?'Limite alto':pct>50?'Atenção':'OK'}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+            <div><div style="font-size:11px;color:var(--muted)">Fatura</div><div style="font-size:16px;font-weight:600;color:var(--${cor})">${BRL(c.fatura_atual)}</div></div>
+            <div><div style="font-size:11px;color:var(--muted)">Disponível</div><div style="font-size:16px;font-weight:600;color:var(--green)">${BRL(disp)}</div></div>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:5px">Limite ${BRL(c.limite)} · ${pct.toFixed(0)}% usado</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${pct.toFixed(1)}%;background:var(--${cor})"></div></div>
+          <div style="margin-top:10px;display:flex;gap:6px">
+            <button class="btn btn-danger btn-sm" onclick="deletarCartao('${c.id}')">Remover</button>
+          </div>
+        </div>`;
+      }).join('')
+    : '<div class="empty"><p>Nenhum cartão cadastrado</p></div>';
+
+  // Tabela de parcelas
+  const tbody = document.getElementById('t-parcelas');
+  tbody.innerHTML = (parcelas && parcelas.length)
+    ? parcelas.map(p => {
+        const restam = p.total_parcelas - p.parcela_atual + 1;
+        const totalRest = restam * p.valor_parcela;
+        return `<tr>
+          <td>${p.cartoes?.nome || '—'}</td>
+          <td>${p.descricao}</td>
+          <td>${p.parcela_atual}/${p.total_parcelas}</td>
+          <td style="font-weight:500">${BRL(p.valor_parcela)}</td>
+          <td style="color:var(--red);font-weight:500">${BRL(totalRest)}</td>
+          <td><span class="badge amber">${restam}x restantes</span></td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="6"><div class="empty"><p>Nenhuma parcela ativa</p></div></td></tr>';
+}
+
+async function deletarCartao(id) {
+  if (!confirm('Remover este cartão?')) return;
+  await sb.from('cartoes').delete().eq('id', id).eq('user_id', currentUser.id);
+  toast('Removido!');
+  await carregarCartoes();
+}
+
+// ═══════════════════════════════════════════════════════════
+// CONTAS
+// ═══════════════════════════════════════════════════════════
+async function addConta() {
+  const nome   = document.getElementById('co-nome').value.trim();
+  const banco  = document.getElementById('co-banco').value.trim();
+  const saldo  = parseFloat(document.getElementById('co-saldo').value) || 0;
+  const tipo   = document.getElementById('co-tipo').value;
+  const titular = document.getElementById('co-titular').value;
+  if (!nome) { toast('Informe o nome da conta', 'error'); return; }
+  const { error } = await sb.from('contas').insert({ user_id: currentUser.id, nome, banco, saldo, tipo, titular });
+  if (error) { toast('Erro: ' + error.message, 'error'); return; }
+  toast('Conta adicionada!');
+  ['co-nome','co-banco','co-saldo'].forEach(id => document.getElementById(id).value = '');
+  await carregarContas();
+}
+
+async function carregarContas() {
+  const { data: contas } = await sb.from('contas').select('*').eq('user_id', currentUser.id).order('tipo').order('nome');
+
+  const correntes  = (contas||[]).filter(c => c.tipo !== 'beneficio');
+  const beneficios = (contas||[]).filter(c => c.tipo === 'beneficio');
+  const totalC     = correntes.reduce((a,c) => a+c.saldo, 0);
+  const totalB     = beneficios.reduce((a,c) => a+c.saldo, 0);
+
+  const renderConta = (c) => {
+    const cor = c.saldo < 0 ? 'red' : c.saldo < 200 ? 'amber' : 'green';
+    return `<div class="conta-item">
+      <div class="conta-info">
+        <div class="cn">${c.nome}</div>
+        <div class="ct">${c.banco||''} · ${c.tipo}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="conta-saldo" style="color:var(--${cor})">${BRL(c.saldo)}</span>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deletarConta('${c.id}')">🗑</button>
+      </div>
+    </div>`;
+  };
+
+  document.getElementById('lista-contas').innerHTML = correntes.length
+    ? correntes.map(renderConta).join('') + `<div class="divider"></div><div style="display:flex;justify-content:space-between;font-weight:600;font-size:13px"><span>Total contas</span><span style="color:var(--${totalC>=0?'green':'red'})">${BRL(totalC)}</span></div>`
+    : '<div class="empty"><p>Nenhuma conta</p></div>';
+
+  document.getElementById('lista-beneficios').innerHTML = beneficios.length
+    ? beneficios.map(renderConta).join('') + `<div class="divider"></div><div style="display:flex;justify-content:space-between;font-weight:600;font-size:13px"><span>Total VA/VR</span><span style="color:var(--amber)">${BRL(totalB)}</span></div>`
+    : '<div class="empty"><p>Nenhum benefício</p></div>';
+
+  document.getElementById('contas-totais').innerHTML = `
+    <div class="card ${totalC>=0?'green':'red'}"><div class="card-label">Total contas</div><div class="card-value ${totalC>=0?'green':'red'}">${BRL(totalC)}</div></div>
+    <div class="card amber"><div class="card-label">Total VA/VR</div><div class="card-value amber">${BRL(totalB)}</div></div>
+    <div class="card ${totalC+totalB>=0?'green':'red'}"><div class="card-label">Total geral</div><div class="card-value ${totalC+totalB>=0?'green':'red'}">${BRL(totalC+totalB)}</div></div>
+  `;
+}
+
+async function deletarConta(id) {
+  if (!confirm('Remover esta conta?')) return;
+  await sb.from('contas').delete().eq('id', id).eq('user_id', currentUser.id);
+  toast('Removido!');
+  await carregarContas();
+}
+
+// ═══════════════════════════════════════════════════════════
+// DÍVIDAS
+// ═══════════════════════════════════════════════════════════
+async function addDivida() {
+  const desc    = document.getElementById('dv-desc').value.trim();
+  const credor  = document.getElementById('dv-credor').value.trim();
+  const titular = document.getElementById('dv-titular').value.trim();
+  const saldo   = parseFloat(document.getElementById('dv-saldo').value) || 0;
+  const parcela = parseFloat(document.getElementById('dv-parcela').value) || 0;
+  const restam  = parseInt(document.getElementById('dv-restam').value) || 0;
+  const dia     = parseInt(document.getElementById('dv-dia').value) || null;
+  if (!desc || !saldo) { toast('Preencha descrição e saldo', 'error'); return; }
+  const { error } = await sb.from('dividas').insert({ user_id: currentUser.id, descricao: desc, credor, titular, saldo_devedor: saldo, valor_parcela: parcela, parcelas_restantes: restam, dia_vencimento: dia });
+  if (error) { toast('Erro: ' + error.message, 'error'); return; }
+  toast('Dívida adicionada!');
+  ['dv-desc','dv-credor','dv-titular','dv-saldo','dv-parcela','dv-restam','dv-dia'].forEach(id => document.getElementById(id).value = '');
+  await carregarDividas();
+}
+
+async function carregarDividas() {
+  const { data: dividas } = await sb.from('dividas').select('*').eq('user_id', currentUser.id).order('saldo_devedor',{ascending:false});
+
+  const total  = (dividas||[]).reduce((a,d) => a+d.saldo_devedor, 0);
+  const mensal = (dividas||[]).reduce((a,d) => a+d.valor_parcela, 0);
+
+  document.getElementById('div-cards').innerHTML = `
+    <div class="card red"><div class="card-label">Total dívidas</div><div class="card-value red">${BRL(total)}</div></div>
+    <div class="card amber"><div class="card-label">Parcelas/mês</div><div class="card-value amber">${BRL(mensal)}</div></div>
+    <div class="card purple"><div class="card-label">Qtd dívidas</div><div class="card-value purple">${(dividas||[]).length}</div></div>
+  `;
+
+  document.getElementById('t-dividas').innerHTML = (dividas && dividas.length)
+    ? dividas.map(d => `<tr>
+        <td style="font-weight:500">${d.descricao}</td>
+        <td>${d.titular||'—'}</td>
+        <td style="color:var(--muted)">${d.credor||'—'}</td>
+        <td style="font-weight:600;color:var(--red)">${BRL(d.saldo_devedor)}</td>
+        <td>${BRL(d.valor_parcela)}/mês</td>
+        <td><span class="badge amber">${d.parcelas_restantes}x</span></td>
+        <td><button class="btn btn-danger btn-sm btn-icon" onclick="deletarDivida('${d.id}')">🗑</button></td>
+      </tr>`).join('')
+    : '<tr><td colspan="7"><div class="empty"><p>Nenhuma dívida cadastrada</p></div></td></tr>';
+
+  document.getElementById('div-progress').innerHTML = (dividas && dividas.length)
+    ? dividas.map(d => {
+        const orig  = d.saldo_devedor + (d.valor_parcela * (d.parcelas_restantes - 1));
+        const pago  = Math.max(0, orig - d.saldo_devedor);
+        const pct   = orig > 0 ? Math.min(pago/orig*100, 100) : 0;
+        return `<div class="progress-item">
+          <div class="progress-header"><span class="progress-name">${d.descricao}</span><span class="progress-val">${BRL(d.saldo_devedor)} restam</span></div>
+          <div class="progress-sub"><span>Pago: ${pct.toFixed(0)}%</span><span>${d.parcelas_restantes}x de ${BRL(d.valor_parcela)}</span></div>
+          <div class="progress-track"><div class="progress-fill" style="width:${pct.toFixed(1)}%"></div></div>
+        </div>`;
+      }).join('')
+    : '<div class="empty"><p>Nenhuma dívida para exibir</p></div>';
+}
+
+async function deletarDivida(id) {
+  if (!confirm('Remover esta dívida?')) return;
+  await sb.from('dividas').delete().eq('id', id).eq('user_id', currentUser.id);
+  toast('Removido!');
+  await carregarDividas();
+}
+
+// ═══════════════════════════════════════════════════════════
+// PROJEÇÃO
+// ═══════════════════════════════════════════════════════════
+async function renderProjecao() {
+  const saldoInicial = parseFloat(document.getElementById('proj-saldo')?.value) || 0;
+  const alertaVal    = parseFloat(document.getElementById('proj-alerta')?.value) || 500;
+
+  // Buscar lançamentos recorrentes
+  const { data: recs } = await sb.from('lancamentos').select('*')
+    .eq('user_id', currentUser.id).eq('recorrente', 'mensal');
+
+  const dias = [];
+  let acc = saldoInicial;
+  const hoje_d = new Date();
+
+  for (let i = 0; i < 60; i++) {
+    const d = new Date(hoje_d);
+    d.setDate(hoje_d.getDate() + i);
+    const ds = d.toISOString().slice(0,10);
+    let ent = 0, sai = 0;
+    if (i % 30 === 0 && recs) {
+      recs.forEach(l => {
+        if (l.tipo === 'Entrada') ent += Math.abs(l.valor);
+        else sai += Math.abs(l.valor);
+      });
+    }
+    acc += ent - sai;
+    dias.push({ ds, ent, sai, saldo: ent-sai, acc });
+  }
+
+  const neg  = dias.filter(d => d.acc < 0).length;
+  const crit = dias.filter(d => d.acc >= 0 && d.acc < alertaVal).length;
+  const primNeg = dias.find(d => d.acc < 0);
+
+  document.getElementById('proj-cards').innerHTML = `
+    <div class="card ${neg>0?'red':'green'}"><div class="card-label">Dias negativos</div><div class="card-value ${neg>0?'red':'green'}">${neg}</div></div>
+    <div class="card ${primNeg?'red':'green'}"><div class="card-label">Primeiro dia negativo</div><div class="card-value ${primNeg?'red':'green'}">${primNeg?fmtData(primNeg.ds):'Nenhum'}</div></div>
+    <div class="card ${crit>0?'amber':'green'}"><div class="card-label">Dias críticos</div><div class="card-value ${crit>0?'amber':'green'}">${crit}</div></div>
+  `;
+
+  const ctx = document.getElementById('chart-projecao').getContext('2d');
+  if (chartProj) chartProj.destroy();
+  const labels30 = dias.slice(0,30).map(d => fmtData(d.ds).slice(0,5));
+  const data30   = dias.slice(0,30).map(d => parseFloat(d.acc.toFixed(2)));
+  const cores30  = data30.map(v => v < 0 ? '#DC2626' : v < alertaVal ? '#D97706' : '#059669');
+  chartProj = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: labels30, datasets: [{ label: 'Saldo acumulado', data: data30, backgroundColor: cores30, borderRadius: 4 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins:{ legend:{display:false} }, scales:{ y:{ ticks:{ callback: v => v<0?'-R$'+Math.abs(Math.round(v)):'R$'+Math.round(v), font:{size:11} } }, x:{grid:{display:false}} } }
+  });
+
+  document.getElementById('t-projecao').innerHTML = dias.slice(0,30).map(d => {
+    const stClass = d.acc < 0 ? 'red' : d.acc < alertaVal ? 'amber' : 'green';
+    const stText  = d.acc < 0 ? '🔴 Negativo' : d.acc < alertaVal ? '🟡 Crítico' : '🟢 OK';
+    return `<tr>
+      <td>${fmtData(d.ds)}</td>
+      <td style="color:var(--green)">${d.ent ? BRL(d.ent) : '—'}</td>
+      <td style="color:var(--red)">${d.sai ? BRL(d.sai) : '—'}</td>
+      <td style="color:var(--${d.saldo>=0?'green':'red'})">${d.saldo ? BRL(d.saldo) : '—'}</td>
+      <td style="font-weight:600;color:var(--${stClass})">${BRL(d.acc)}</td>
+      <td><span class="badge ${stClass}">${stText}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// TEMA
+// ═══════════════════════════════════════════════════════════
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
+  document.getElementById('theme-label').textContent = isDark ? 'Modo escuro' : 'Modo claro';
+  localStorage.setItem('theme', isDark ? 'light' : 'dark');
+}
+
+// Aplicar tema salvo
+const savedTheme = localStorage.getItem('theme');
+if (savedTheme === 'dark') {
+  document.documentElement.setAttribute('data-theme', 'dark');
+  document.getElementById('theme-label').textContent = 'Modo claro';
+}
+
+function fecharModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+</script>
+</body>
+</html>
