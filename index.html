@@ -475,9 +475,9 @@ tbody tr:hover td{background:var(--bg)}
           <div id="lan-resumo" class="cards-grid" style="margin-bottom:16px"></div>
           <div class="table-wrap">
             <table><thead><tr>
-              <th>Data</th><th>Descrição</th><th>Categoria</th><th>Tipo</th><th>Valor</th><th>Status</th><th></th>
+              <th>Data</th><th>Lançado por</th><th>Descrição</th><th>Categoria</th><th>Tipo</th><th>Valor</th><th>Status</th><th></th>
             </tr></thead>
-            <tbody id="t-lancamentos"><tr><td colspan="7" class="empty">Carregando...</td></tr></tbody>
+            <tbody id="t-lancamentos"><tr><td colspan="8" class="empty">Carregando...</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -1023,6 +1023,7 @@ async function addLancamento() {
 
   const { error } = await sb.from('lancamentos').insert({
     user_id: currentUser.id,
+    lancado_por: currentUserNome,
     descricao: desc, valor: valorFinal,
     tipo, categoria: cat, data, status, observacao: obs
   });
@@ -1069,7 +1070,7 @@ async function carregarLancamentos() {
 
   const tbody = document.getElementById('t-lancamentos');
   if (!lans || !lans.length) {
-    tbody.innerHTML = '<tr><td colspan="7"><div class="empty"><div class="empty-icon">📭</div><p>Nenhum lançamento encontrado</p></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty"><div class="empty-icon">📭</div><p>Nenhum lançamento encontrado</p></div></td></tr>';
     return;
   }
 
@@ -1078,6 +1079,7 @@ async function carregarLancamentos() {
     const cor = l.tipo === 'Entrada' ? 'green' : l.tipo === 'Investimento' ? 'blue' : 'red';
     return `<tr>
       <td>${fmtData(l.data)}</td>
+      <td><span class="badge ${l.lancado_por?.toLowerCase().includes('leo')||l.lancado_por?.toLowerCase().includes('léo')?'blue':'purple'}">${l.lancado_por||'—'}</span></td>
       <td style="font-weight:500">${l.descricao}</td>
       <td><span class="badge gray">${l.categoria}</span></td>
       <td><span class="badge ${tipoBadge}">${l.tipo}</span></td>
@@ -1174,17 +1176,55 @@ async function carregarFixas() {
   const totRec    = receitas.reduce((a,f) => a+f.valor, 0);
   const totDesp   = despesas.reduce((a,f) => a+f.valor, 0);
 
-  const renderFixaItem = (f) => `
+  const renderFixaItem = (f) => {
+    const logosBanco = {
+      'nubank': 'https://logo.clearbit.com/nubank.com.br',
+      'itaú': 'https://logo.clearbit.com/itau.com.br',
+      'itau': 'https://logo.clearbit.com/itau.com.br',
+      'bradesco': 'https://logo.clearbit.com/bradesco.com.br',
+      'santander': 'https://logo.clearbit.com/santander.com.br',
+      'caixa': 'https://logo.clearbit.com/caixa.gov.br',
+      'banco do brasil': 'https://logo.clearbit.com/bb.com.br',
+      'bb': 'https://logo.clearbit.com/bb.com.br',
+      'inter': 'https://logo.clearbit.com/inter.co',
+      'xp': 'https://logo.clearbit.com/xpi.com.br',
+      'c6': 'https://logo.clearbit.com/c6bank.com.br',
+      'c6 bank': 'https://logo.clearbit.com/c6bank.com.br',
+      'picpay': 'https://logo.clearbit.com/picpay.com',
+      'next': 'https://logo.clearbit.com/next.me',
+      'vivo': 'https://logo.clearbit.com/vivo.com.br',
+      'claro': 'https://logo.clearbit.com/claro.com.br',
+      'tim': 'https://logo.clearbit.com/tim.com.br',
+      'ticket': 'https://logo.clearbit.com/ticket.com.br',
+      'sodexo': 'https://logo.clearbit.com/sodexo.com',
+      'alelo': 'https://logo.clearbit.com/alelo.com.br',
+      'netflix': 'https://logo.clearbit.com/netflix.com',
+      'spotify': 'https://logo.clearbit.com/spotify.com',
+      'amazon': 'https://logo.clearbit.com/amazon.com',
+      'disney': 'https://logo.clearbit.com/disneyplus.com',
+      'apple': 'https://logo.clearbit.com/apple.com',
+      'google': 'https://logo.clearbit.com/google.com',
+    };
+    const chave = (f.conta_nome || f.descricao || '').toLowerCase();
+    const logoUrl = Object.entries(logosBanco).find(([k]) => chave.includes(k))?.[1];
+    const logoHtml = logoUrl
+      ? `<img src="${logoUrl}" onerror="this.style.display='none'" style="width:20px;height:20px;border-radius:4px;object-fit:contain;flex-shrink:0">`
+      : `<div style="width:20px;height:20px;border-radius:4px;background:var(--border);flex-shrink:0"></div>`;
+    return `
     <div class="conta-item">
-      <div class="conta-info">
-        <div class="cn">${f.descricao} ${f.dia_mes?`<span style="font-size:11px;color:var(--muted)">· dia ${f.dia_mes}</span>`:''}</div>
-        <div class="ct">${f.categoria}${f.conta_nome?' · '+f.conta_nome:''}</div>
+      <div style="display:flex;align-items:center;gap:10px;flex:1">
+        ${logoHtml}
+        <div class="conta-info">
+          <div class="cn">${f.descricao} ${f.dia_mes?`<span style="font-size:11px;color:var(--muted)">· dia ${f.dia_mes}</span>`:''}</div>
+          <div class="ct">${f.categoria}${f.conta_nome?' · '+f.conta_nome:''}</div>
+        </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <span class="conta-saldo" style="color:var(--${f.tipo==='receita'?'green':'red'})">${BRL(f.valor)}</span>
         <button class="btn btn-danger btn-sm btn-icon" onclick="deletarFixa('${f.id}')">🗑</button>
       </div>
-    </div>`;
+    </div>`
+  };
 
   document.getElementById('lista-receitas-fixas').innerHTML = receitas.length
     ? receitas.map(renderFixaItem).join('') + `<div class="divider"></div><div style="display:flex;justify-content:space-between;font-weight:600;font-size:13px"><span>Total</span><span style="color:var(--green)">${BRL(totRec)}</span></div>`
