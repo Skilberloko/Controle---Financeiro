@@ -944,33 +944,53 @@ async function fazerLogout() {
 }
 
 async function iniciarApp(user) {
-  currentUser = user;
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('app-screen').style.display = 'block';
+  try {
+    currentUser = user;
 
-  // Perfil
-  const { data: perfil } = await sb.from('profiles').select('*').eq('id', user.id).single();
-  currentUserNome = perfil?.nome || user.email.split('@')[0];
-  const apelido = perfil?.apelido || '';
-  const inicial = currentUserNome.charAt(0).toUpperCase();
-  document.getElementById('user-name').textContent = currentUserNome;
-  // Mostra apelido se tiver, senão deixa vazio
-  const apelidoEl = document.getElementById('user-apelido');
-  if (apelidoEl) apelidoEl.textContent = apelido ? `"${apelido}"` : '';
+    // Mostrar app imediatamente — não espera perfil
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-screen').style.display  = 'block';
 
-  document.getElementById('lan-form-title').textContent = `Novo lançamento — ${currentUserNome}`;
-  document.getElementById('user-avatar').textContent = inicial;
+    // Tenta buscar perfil — se falhar usa o email
+    let perfilNome = user.email.split('@')[0];
+    let apelido    = '';
+    try {
+      const { data: perfil } = await sb.from('profiles').select('*').eq('id', user.id).single();
+      if (perfil?.nome)    perfilNome = perfil.nome;
+      if (perfil?.apelido) apelido    = perfil.apelido;
+    } catch(e) { /* silencioso — usa email */ }
 
-  // Cor do avatar baseada no nome
-  const cores = ['#2563EB','#7C3AED','#059669','#D97706','#DC2626'];
-  const idx = currentUserNome.charCodeAt(0) % cores.length;
-  document.getElementById('user-avatar').style.background = cores[idx];
+    currentUserNome = perfilNome;
+    const inicial   = currentUserNome.charAt(0).toUpperCase();
 
-  document.getElementById('login-senha').value = '';
-  document.getElementById('l-data').value = hoje();
-  setTipoLan('Saída'); // inicializar form
-  preencherFiltrosMeses();
-  await carregarTudo();
+    document.getElementById('user-name').textContent    = currentUserNome;
+    const apelidoEl = document.getElementById('user-apelido');
+    if (apelidoEl) apelidoEl.textContent = apelido ? `"${apelido}"` : user.email;
+
+    document.getElementById('lan-form-title').textContent = `Novo lançamento — ${currentUserNome}`;
+    document.getElementById('user-avatar').textContent    = inicial;
+
+    const cores = ['#2563EB','#7C3AED','#059669','#D97706','#DC2626'];
+    document.getElementById('user-avatar').style.background = cores[currentUserNome.charCodeAt(0) % cores.length];
+
+    document.getElementById('login-senha').value = '';
+    document.getElementById('l-data').value      = hoje();
+
+    setTipoLan('Saída');
+    preencherFiltrosMeses();
+    await carregarTudo();
+
+  } catch(err) {
+    // Se der qualquer erro inesperado, mostra na tela de login
+    console.error('Erro ao iniciar app:', err);
+    const errEl = document.getElementById('login-error');
+    if (errEl) {
+      errEl.textContent = 'Erro ao carregar: ' + (err.message || err);
+      errEl.style.display = 'block';
+    }
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app-screen').style.display   = 'none';
+  }
 }
 
 // Verificar sessão ao carregar
