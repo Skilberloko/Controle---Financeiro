@@ -910,6 +910,7 @@ const sb = createClient(SUPA_URL, SUPA_KEY);
 // ═══════════════════════════════════════════════════════════
 let currentUser = null;
 let currentUserNome = '';
+let nomeExibidoGlobal = '';
 let pessoaAtiva = 'leo'; // leo = usuário logado, isa = parceiro
 let todosUsuarios = {}; // { uid: nome }
 let chartMensal = null, chartProj = null;
@@ -1012,20 +1013,26 @@ async function iniciarApp(user) {
     } catch(e) { /* silencioso — usa email */ }
 
     currentUserNome = perfilNome;
-    const inicial   = currentUserNome.charAt(0).toUpperCase();
 
-    // Exibir apelido curto no lugar do nome completo/email
-    const nomeExibido = apelido || currentUserNome.split(' ')[0].split('.')[0];
+    // Apelido: usa campo apelido do banco, se não tiver usa primeiro nome antes do ponto/espaço
+    // Ex: "leonardo.vicente10" → "Leonardo", "Léo" (se apelido cadastrado) → "Léo"
+    const nomeExibido = apelido
+      ? apelido
+      : (perfilNome.includes('.')
+          ? perfilNome.split('.')[0].charAt(0).toUpperCase() + perfilNome.split('.')[0].slice(1)
+          : perfilNome.split(' ')[0]);
+    nomeExibidoGlobal = nomeExibido;
+
     document.getElementById('user-name').textContent = nomeExibido;
     const apelidoEl = document.getElementById('user-apelido');
-    if (apelidoEl) apelidoEl.textContent = ''; // não mostrar email
+    if (apelidoEl) apelidoEl.textContent = '';
 
-    // Título do form com apelido curto
     document.getElementById('lan-form-title').textContent = `Novo lançamento — ${nomeExibido}`;
+    const inicial = nomeExibido.charAt(0).toUpperCase();
     document.getElementById('user-avatar').textContent    = inicial;
 
     const cores = ['#2563EB','#7C3AED','#059669','#D97706','#DC2626'];
-    document.getElementById('user-avatar').style.background = cores[currentUserNome.charCodeAt(0) % cores.length];
+    document.getElementById('user-avatar').style.background = cores[nomeExibido.charCodeAt(0) % cores.length];
 
     document.getElementById('login-senha').value = '';
     document.getElementById('l-data').value      = hoje();
@@ -1106,32 +1113,9 @@ const CATS_INVEST = [
   {cat:'💰 Outros',sub:['🏠 Imóvel','👥 Previdência','📦 Outros']},
 ];
 
-const LOGOS_BANCO = {
-  'itaú':    'https://logo.clearbit.com/itau.com.br',
-  'itau':    'https://logo.clearbit.com/itau.com.br',
-  'nubank':  'https://logo.clearbit.com/nubank.com.br',
-  'xp':      'https://logo.clearbit.com/xpi.com.br',
-  'bradesco':'https://logo.clearbit.com/bradesco.com.br',
-  'santander':'https://logo.clearbit.com/santander.com.br',
-  'caixa':   'https://logo.clearbit.com/caixa.gov.br',
-  'inter':   'https://logo.clearbit.com/inter.co',
-  'c6':      'https://logo.clearbit.com/c6bank.com.br',
-  'picpay':  'https://logo.clearbit.com/picpay.com',
-  'ticket':  'https://logo.clearbit.com/ticket.com.br',
-  'vivo':    'https://logo.clearbit.com/vivo.com.br',
-  'netflix': 'https://logo.clearbit.com/netflix.com',
-  'spotify': 'https://logo.clearbit.com/spotify.com',
-  'amazon':  'https://logo.clearbit.com/amazon.com',
-  'disney':  'https://logo.clearbit.com/disneyplus.com',
-  'apple':   'https://logo.clearbit.com/apple.com',
-  'google':  'https://logo.clearbit.com/google.com',
-};
 
 function getLogo(nome) {
-  if (!nome) return null;
-  const k = nome.toLowerCase();
-  const match = Object.entries(LOGOS_BANCO).find(([key]) => k.includes(key));
-  return match ? match[1] : null;
+  return getLogoByNome(nome);
 }
 
 let tipoAtual = 'Saída';
@@ -1183,20 +1167,7 @@ function atualizarLogoBanco() {
   const sel = document.getElementById('l-banco');
   const img = document.getElementById('logo-banco-sel');
   if (!sel || !img) return;
-  const mapa = {
-    'Itaú':        'https://logo.clearbit.com/itau.com.br',
-    'Nubank PF':   'https://logo.clearbit.com/nubank.com.br',
-    'Nubank PJ':   'https://logo.clearbit.com/nubank.com.br',
-    'XP':          'https://logo.clearbit.com/xpi.com.br',
-    'Bradesco':    'https://logo.clearbit.com/bradesco.com.br',
-    'Santander':   'https://logo.clearbit.com/santander.com.br',
-    'Caixa':       'https://logo.clearbit.com/caixa.gov.br',
-    'Inter':       'https://logo.clearbit.com/inter.co',
-    'C6':          'https://logo.clearbit.com/c6bank.com.br',
-    'PicPay':      'https://logo.clearbit.com/picpay.com',
-    'Ticket':      'https://logo.clearbit.com/ticket.com.br',
-  };
-  const url = mapa[sel.value];
+  const url = getLogoByNome(sel.value);
   if (url) {
     img.src = url;
     img.style.display = 'block';
@@ -1426,11 +1397,58 @@ const HISTORICO_LEO = {
 
 // Saldos reais das contas (fonte: extratos)
 const SALDOS_CONTAS_REAIS = [
-  { nome: 'Itaú 018150-1',    banco: 'Itaú',   logo: 'https://logo.clearbit.com/itau.com.br',   saldo: -569.20 },
-  { nome: 'Nubank PF',        banco: 'Nubank', logo: 'https://logo.clearbit.com/nubank.com.br',  saldo:   15.65 },
-  { nome: 'XP 9442747',       banco: 'XP',     logo: 'https://logo.clearbit.com/xpi.com.br',     saldo:    0.00 },
-  { nome: 'Nubank PJ',        banco: 'Nubank', logo: 'https://logo.clearbit.com/nubank.com.br',  saldo:    0.00 },
+  { nome: 'Itaú',     banco: 'Itaú',   logo: 'https://logo.clearbit.com/itau.com.br',   saldo: -569.20 },
+  { nome: 'Nubank',   banco: 'Nubank', logo: 'https://logo.clearbit.com/nubank.com.br',  saldo:   15.65 },
+  { nome: 'XP',       banco: 'XP',     logo: 'https://logo.clearbit.com/xpi.com.br',     saldo:    0.00 },
+  { nome: 'Nubank PJ',banco: 'Nubank', logo: 'https://logo.clearbit.com/nubank.com.br',  saldo:    0.00 },
 ];
+
+// Mapa de logos por banco (usado em todo o app)
+const LOGO_MAP = {
+  'itaú':    'https://logo.clearbit.com/itau.com.br',
+  'itau':    'https://logo.clearbit.com/itau.com.br',
+  'nubank':  'https://logo.clearbit.com/nubank.com.br',
+  'xp':      'https://logo.clearbit.com/xpi.com.br',
+  'bradesco':'https://logo.clearbit.com/bradesco.com.br',
+  'santander':'https://logo.clearbit.com/santander.com.br',
+  'caixa':   'https://logo.clearbit.com/caixa.gov.br',
+  'inter':   'https://logo.clearbit.com/inter.co',
+  'c6':      'https://logo.clearbit.com/c6bank.com.br',
+  'c6 bank': 'https://logo.clearbit.com/c6bank.com.br',
+  'picpay':  'https://logo.clearbit.com/picpay.com',
+  'ticket':  'https://logo.clearbit.com/ticket.com.br',
+  'vivo':    'https://logo.clearbit.com/vivo.com.br',
+  'netflix': 'https://logo.clearbit.com/netflix.com',
+  'spotify': 'https://logo.clearbit.com/spotify.com',
+  'amazon':  'https://logo.clearbit.com/amazon.com',
+  'disney':  'https://logo.clearbit.com/disneyplus.com',
+  'apple':   'https://logo.clearbit.com/apple.com',
+  'google':  'https://logo.clearbit.com/google.com',
+};
+
+function getLogoByNome(nome) {
+  if (!nome) return null;
+  const k = nome.toLowerCase();
+  for (const [key, url] of Object.entries(LOGO_MAP)) {
+    if (k.includes(key)) return url;
+  }
+  return null;
+}
+
+function logoImg(nome, size=22) {
+  const url = getLogoByNome(nome);
+  if (!url) return '';
+  return `<img src="${url}" style="width:${size}px;height:${size}px;border-radius:${Math.round(size*0.23)}px;object-fit:contain;flex-shrink:0" onerror="this.style.display='none'">`;
+}
+
+function nomeContaLimpo(nome) {
+  // Remove números e códigos: "Itaú 018150-1" → "Itaú", "Nubank PF 2030694-4" → "Nubank"
+  if (!nome) return '';
+  return nome
+    .replace(/\s+\d[\d\-\.]+/g, '') // remove " 018150-1", " 9442747"
+    .replace(/\s*PF\s*$/i, '')        // remove PF no final (Nubank PF → Nubank)
+    .trim();
+}
 
 async function carregarDashboard() {
   const mes = mesMes();
@@ -1460,24 +1478,30 @@ async function carregarDashboard() {
   const hoje_full = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
   document.getElementById('dash-sub').textContent = `Visão consolidada do casal · ${hoje_full}`;
 
-  // Quem está logado vs parceiro
-  const meLabel  = currentUserNome;
-  const herLabel = meLabel.toLowerCase().includes('leo')||meLabel.toLowerCase().includes('léo') ? 'Isabela' : 'Léo';
+  // Apelidos do casal
+  const meLabel  = nomeExibidoGlobal || currentUserNome;
+  const herLabel = ['leo','léo','leonardo'].some(n => meLabel.toLowerCase().includes(n)) ? 'Isa' : 'Léo';
 
-  // Separar meus vs parceiro nos lançamentos do banco
+  // Separar meus vs parceiro
   const meusLan    = (todos||[]).filter(l => l.user_id === currentUser.id);
   const parceiroLan= (todos||[]).filter(l => l.user_id !== currentUser.id);
   const meEnt  = meusLan.filter(l=>l.tipo==='Entrada').reduce((a,l)=>a+Math.abs(l.valor),0);
   const herEnt = parceiroLan.filter(l=>l.tipo==='Entrada').reduce((a,l)=>a+Math.abs(l.valor),0);
+  const meSai  = meusLan.filter(l=>l.tipo==='Saída').reduce((a,l)=>a+Math.abs(l.valor),0);
+  const herSai = parceiroLan.filter(l=>l.tipo==='Saída').reduce((a,l)=>a+Math.abs(l.valor),0);
 
-  // Cards principais
+  // Cards principais com nome dos usuários
   document.getElementById('dash-cards').innerHTML = `
     <div class="card green">
       <div class="card-label">Entradas do mês</div>
       <div class="card-value green">${BRL(entradas)}</div>
       ${(meEnt>0||herEnt>0)?`<div style="font-size:11px;color:var(--muted);margin-top:4px">${meLabel}: ${BRL(meEnt)} · ${herLabel}: ${BRL(herEnt)}</div>`:''}
     </div>
-    <div class="card red"><div class="card-label">Saídas do mês</div><div class="card-value red">${BRL(saidas)}</div></div>
+    <div class="card red">
+      <div class="card-label">Saídas do mês</div>
+      <div class="card-value red">${BRL(saidas)}</div>
+      ${(meSai>0||herSai>0)?`<div style="font-size:11px;color:var(--muted);margin-top:4px">${meLabel}: ${BRL(meSai)} · ${herLabel}: ${BRL(herSai)}</div>`:''}
+    </div>
     <div class="card blue"><div class="card-label">Investimentos</div><div class="card-value blue">${BRL(invest)}</div></div>
     <div class="card ${saldo>=0?'green':'red'}"><div class="card-label">Saldo livre</div><div class="card-value ${saldo>=0?'green':'red'}">${BRL(saldo)}</div></div>
   `;
@@ -1488,14 +1512,15 @@ async function carregarDashboard() {
   const totalContas = todasContas.reduce((a,c) => a + (c.saldo||0), 0);
 
   document.getElementById('dash-contas').innerHTML = todasContas.map(c => {
-    const cor  = c.saldo < 0 ? 'red' : c.saldo < 100 ? 'amber' : 'green';
-    const logo = c.logo || getLogo(c.banco || c.nome);
+    const cor    = c.saldo < 0 ? 'red' : c.saldo < 100 ? 'amber' : 'green';
+    const nomeLimpo = nomeContaLimpo(c.nome || c.banco || '');
+    const logo   = c.logo || getLogoByNome(c.banco || c.nome || '');
     return `<div class="conta-item">
-      <div style="display:flex;align-items:center;gap:8px;flex:1">
-        ${logo ? `<img src="${logo}" style="width:22px;height:22px;border-radius:5px;object-fit:contain" onerror="this.style.display='none'">` : ''}
-        <div class="conta-info"><div class="cn">${c.nome}</div><div class="ct">${c.banco||''}</div></div>
+      <div style="display:flex;align-items:center;gap:10px;flex:1">
+        ${logo ? `<img src="${logo}" style="width:28px;height:28px;border-radius:7px;object-fit:contain;flex-shrink:0" onerror="this.style.display='none'">` : '<div style="width:28px;height:28px;border-radius:7px;background:var(--border);flex-shrink:0"></div>'}
+        <div class="conta-info"><div class="cn">${nomeLimpo}</div></div>
       </div>
-      <div class="conta-saldo" style="color:var(--${cor})">${BRL(c.saldo||0)}</div>
+      <div class="conta-saldo" style="color:var(--${cor});font-size:15px;font-weight:600">${BRL(c.saldo||0)}</div>
     </div>`;
   }).join('') + `<div class="divider"></div>
     <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600">
@@ -1597,7 +1622,7 @@ async function renderChartMensal() {
 async function addLancamento() {
   const desc   = document.getElementById('l-desc').value.trim();
   const valor  = parseFloat(document.getElementById('l-valor').value);
-  const tipo   = tipoAtual;
+  const tipo   = tipoAtual || 'Saída';
   const cat    = document.getElementById('l-cat').value;
   const data   = document.getElementById('l-data').value || hoje();
   const status = document.getElementById('l-status').value;
@@ -1624,7 +1649,7 @@ async function addLancamento() {
       const d = String(Math.min(diaI, diasMes)).padStart(2,'0');
       const dataLan = `${a}-${String(m).padStart(2,'0')}-${d}`;
       inserts.push({
-        user_id: currentUser.id, lancado_por: currentUserNome,
+        user_id: currentUser.id, lancado_por: nomeExibidoGlobal || currentUserNome,
         descricao: desc, valor: valorFinal, tipo, categoria: cat,
         data: dataLan, status, observacao: obs, recorrente: 'mensal',
         forma_pagamento: pagamento, parcelas, conta_nome: banco
@@ -1645,7 +1670,7 @@ async function addLancamento() {
     const parcelas  = document.getElementById('l-parcelas')?.value || '1';
     const banco     = document.getElementById('l-banco')?.value || '';
     const { error } = await sb.from('lancamentos').insert({
-      user_id: currentUser.id, lancado_por: currentUserNome,
+      user_id: currentUser.id, lancado_por: nomeExibidoGlobal || currentUserNome,
       descricao: desc, valor: valorFinal,
       tipo, categoria: cat, data, status, observacao: obs,
       recorrente: recFlag ? 'mensal' : 'nao',
@@ -1714,7 +1739,7 @@ async function carregarLancamentos() {
     const cor = l.tipo === 'Entrada' ? 'green' : l.tipo === 'Investimento' ? 'blue' : 'red';
     return `<tr>
       <td>${fmtData(l.data)}</td>
-      <td><span class="badge ${l.lancado_por?.toLowerCase().includes('leo')||l.lancado_por?.toLowerCase().includes('léo')?'blue':'purple'}">${l.lancado_por||'—'}</span></td>
+      <td><span class="badge ${['leo','léo','leonardo'].some(n=>l.lancado_por?.toLowerCase().includes(n))?'blue':'purple'}" style="min-width:36px;text-align:center">${l.lancado_por||'—'}</span></td>
       <td style="font-weight:500">${l.descricao}</td>
       <td><span class="badge gray">${l.categoria}</span></td>
       <td><span class="badge ${tipoBadge}">${l.tipo}</span></td>
@@ -1768,7 +1793,7 @@ async function carregarExtrato() {
         const cor = l.tipo==='Entrada'?'green':l.tipo==='Investimento'?'blue':'red';
         return `<tr>
           <td>${fmtData(l.data)}</td>
-          <td><span class="badge ${l.lancado_por?.toLowerCase().includes('leo')||l.lancado_por?.toLowerCase().includes('léo')?'blue':'purple'}" style="font-size:10px">${l.lancado_por||'—'}</span></td>
+          <td><span class="badge ${['leo','léo','leonardo'].some(n=>l.lancado_por?.toLowerCase().includes(n))?'blue':'purple'}" style="font-size:10px;min-width:32px;text-align:center">${l.lancado_por||'—'}</span></td>
           <td>${l.descricao}</td>
           <td><span class="badge gray">${l.categoria}</span></td>
           <td><span class="badge ${cor}">${l.tipo}</span></td>
@@ -1814,36 +1839,7 @@ async function carregarFixas() {
   const totDesp   = despesas.reduce((a,f) => a+f.valor, 0);
 
   const renderFixaItem = (f) => {
-    const logosBanco = {
-      'nubank': 'https://logo.clearbit.com/nubank.com.br',
-      'itaú': 'https://logo.clearbit.com/itau.com.br',
-      'itau': 'https://logo.clearbit.com/itau.com.br',
-      'bradesco': 'https://logo.clearbit.com/bradesco.com.br',
-      'santander': 'https://logo.clearbit.com/santander.com.br',
-      'caixa': 'https://logo.clearbit.com/caixa.gov.br',
-      'banco do brasil': 'https://logo.clearbit.com/bb.com.br',
-      'bb': 'https://logo.clearbit.com/bb.com.br',
-      'inter': 'https://logo.clearbit.com/inter.co',
-      'xp': 'https://logo.clearbit.com/xpi.com.br',
-      'c6': 'https://logo.clearbit.com/c6bank.com.br',
-      'c6 bank': 'https://logo.clearbit.com/c6bank.com.br',
-      'picpay': 'https://logo.clearbit.com/picpay.com',
-      'next': 'https://logo.clearbit.com/next.me',
-      'vivo': 'https://logo.clearbit.com/vivo.com.br',
-      'claro': 'https://logo.clearbit.com/claro.com.br',
-      'tim': 'https://logo.clearbit.com/tim.com.br',
-      'ticket': 'https://logo.clearbit.com/ticket.com.br',
-      'sodexo': 'https://logo.clearbit.com/sodexo.com',
-      'alelo': 'https://logo.clearbit.com/alelo.com.br',
-      'netflix': 'https://logo.clearbit.com/netflix.com',
-      'spotify': 'https://logo.clearbit.com/spotify.com',
-      'amazon': 'https://logo.clearbit.com/amazon.com',
-      'disney': 'https://logo.clearbit.com/disneyplus.com',
-      'apple': 'https://logo.clearbit.com/apple.com',
-      'google': 'https://logo.clearbit.com/google.com',
-    };
-    const chave = (f.conta_nome || f.descricao || '').toLowerCase();
-    const logoUrl = Object.entries(logosBanco).find(([k]) => chave.includes(k))?.[1];
+    const logoUrl = getLogoByNome(f.conta_nome || f.descricao || '');
     const logoHtml = logoUrl
       ? `<img src="${logoUrl}" onerror="this.style.display='none'" style="width:20px;height:20px;border-radius:4px;object-fit:contain;flex-shrink:0">`
       : `<div style="width:20px;height:20px;border-radius:4px;background:var(--border);flex-shrink:0"></div>`;
