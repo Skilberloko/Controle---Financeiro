@@ -72,9 +72,10 @@ input,select,textarea,button{font-family:inherit}
 }
 .btn-full:hover{opacity:.9}
 .login-error{
-  background:var(--red-bg);border:1px solid var(--red-light);
   border-radius:var(--radius);padding:10px 14px;
-  font-size:13px;color:var(--red);margin-bottom:14px;display:none;
+  font-size:13px;margin-bottom:14px;display:none;
+  background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;
+  word-break:break-word;
 }
 
 /* ── APP LAYOUT ───────────────────────────────────────────── */
@@ -926,14 +927,62 @@ const mesMes = () => new Date().toISOString().slice(0,7);
 // AUTH
 // ═══════════════════════════════════════════════════════════
 async function fazerLogin() {
-  const email = document.getElementById('login-email').value.trim();
-  const senha = document.getElementById('login-senha').value;
-  const errEl = document.getElementById('login-error');
+  const email  = document.getElementById('login-email').value.trim();
+  const senha  = document.getElementById('login-senha').value;
+  const errEl  = document.getElementById('login-error');
+  const btnEl  = document.querySelector('.btn-full');
+
   errEl.style.display = 'none';
-  if (!email || !senha) { errEl.textContent = 'Preencha email e senha.'; errEl.style.display = 'block'; return; }
-  const { data, error } = await sb.auth.signInWithPassword({ email, password: senha });
-  if (error) { errEl.textContent = error.message === 'Invalid login credentials' ? 'Email ou senha incorretos.' : error.message; errEl.style.display = 'block'; return; }
-  await iniciarApp(data.user);
+  if (!email || !senha) {
+    mostrarErroLogin('Preencha email e senha.');
+    return;
+  }
+
+  // Mostrar loading no botão
+  btnEl.textContent = 'Entrando...';
+  btnEl.disabled = true;
+
+  try {
+    // Passo 1: autenticar
+    mostrarErroLogin('Verificando credenciais...', '#2563EB');
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: senha });
+
+    if (error) {
+      const msgs = {
+        'Invalid login credentials': 'Email ou senha incorretos.',
+        'Email not confirmed': 'Email não confirmado. Verifique sua caixa de entrada.',
+        'Too many requests': 'Muitas tentativas. Aguarde alguns minutos.',
+      };
+      mostrarErroLogin(msgs[error.message] || ('Erro: ' + error.message));
+      return;
+    }
+
+    if (!data?.user) {
+      mostrarErroLogin('Erro: resposta inválida do servidor.');
+      return;
+    }
+
+    // Passo 2: carregar app
+    mostrarErroLogin('Carregando...', '#059669');
+    await iniciarApp(data.user);
+
+  } catch(err) {
+    mostrarErroLogin('Erro inesperado: ' + (err.message || String(err)));
+  } finally {
+    btnEl.textContent = 'Entrar';
+    btnEl.disabled = false;
+  }
+}
+
+function mostrarErroLogin(msg, cor) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg;
+  el.style.background = cor === '#2563EB' ? '#EFF6FF'
+                      : cor === '#059669' ? '#ECFDF5'
+                      : '#FEF2F2';
+  el.style.color = cor || '#DC2626';
+  el.style.border = `1px solid ${cor === '#2563EB' ? '#BFDBFE' : cor === '#059669' ? '#BBF7D0' : '#FECACA'}`;
+  el.style.display = 'block';
 }
 
 async function fazerLogout() {
@@ -948,6 +997,8 @@ async function iniciarApp(user) {
     currentUser = user;
 
     // Mostrar app imediatamente — não espera perfil
+    mostrarErroLogin('Abrindo app...', '#059669');
+    await new Promise(r => setTimeout(r, 100)); // pequeno delay visual
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app-screen').style.display  = 'block';
 
