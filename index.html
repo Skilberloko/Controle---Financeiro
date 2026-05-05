@@ -295,7 +295,7 @@ tbody tr:hover td{background:var(--bg)}
   display:none;position:fixed;bottom:0;left:0;right:0;z-index:100;
   background:var(--surface);border-top:1px solid var(--border);
   padding:6px 0 env(safe-area-inset-bottom,8px);
-  grid-template-columns:repeat(6,1fr);
+  grid-template-columns:repeat(8,1fr);
   box-shadow:0 -1px 12px rgba(0,0,0,.08);
 }
 .bnav-item{
@@ -329,6 +329,23 @@ tbody tr:hover td{background:var(--bg)}
 .btn-banco:hover{border-color:var(--text);color:var(--text)}
 .btn-banco.active{border-color:var(--blue);background:var(--blue-bg);color:var(--blue)}
 .saldo-hist{font-size:13px;font-weight:600}
+
+/* DRE */
+.dre-table{width:100%;border-collapse:collapse;font-size:13px;min-width:900px}
+.dre-table th{background:var(--bg);padding:8px 12px;text-align:right;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;border-bottom:2px solid var(--border);white-space:nowrap;position:sticky;top:0;z-index:1}
+.dre-table th:first-child{text-align:left;position:sticky;left:0;background:var(--bg);z-index:2}
+.dre-table td{padding:7px 12px;text-align:right;border-bottom:0.5px solid var(--border);color:var(--text);white-space:nowrap}
+.dre-table td:first-child{text-align:left;font-weight:500;position:sticky;left:0;background:var(--surface);z-index:1}
+.dre-table tr:hover td{background:var(--bg)}
+.dre-section td:first-child{font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.5px;padding-top:14px;color:var(--muted)}
+.dre-total td{font-weight:700!important;border-top:2px solid var(--border);border-bottom:2px solid var(--border);font-size:14px}
+.dre-total td:first-child{font-size:13px}
+.dre-pos{color:var(--green)!important;font-weight:600}
+.dre-neg{color:var(--red)!important;font-weight:600}
+.dre-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:12px;text-align:right;font-family:var(--font,inherit);color:var(--text)}
+.dre-input:focus{outline:none;border-color:var(--blue)}
+.dre-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border)}
+.dre-ano-sel{display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
 .saldo-pos{color:var(--green)}.saldo-neg{color:var(--red)}
 </style>
 </head>
@@ -392,9 +409,14 @@ tbody tr:hover td{background:var(--bg)}
         <div class="nav-item" onclick="navTo('contas')"><span class="ni">🏦</span>Contas</div>
         <div class="nav-item" onclick="navTo('dividas')"><span class="ni">📊</span>Dívidas</div>
         <div class="nav-item" onclick="navTo('projecao')"><span class="ni">📅</span>Projeção</div>
+        <div class="nav-item" onclick="navTo('dre')"><span class="ni">📈</span>DRE</div>
+        <div class="nav-item" onclick="navTo('diagnostico')"><span class="ni">🩺</span>Diagnóstico</div>
+        <div class="nav-item" onclick="navTo('metas')"><span class="ni">🎯</span>Metas</div>
+        <div class="nav-item" onclick="navTo('configuracoes')"><span class="ni">⚙️</span>Configurações</div>
       </div>
       <div class="sidebar-footer">
         <button class="theme-btn" onclick="toggleTheme()"><span>🌙</span><span id="theme-label">Modo escuro</span></button>
+        <button class="theme-btn" onclick="navTo('configuracoes'); document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));event.currentTarget.classList.add('active')"><span>⚙️</span>Configurações</button>
         <button class="logout-btn" onclick="fazerLogout()"><span>🚪</span>Sair</button>
       </div>
     </aside>
@@ -407,6 +429,9 @@ tbody tr:hover td{background:var(--bg)}
 
       <button class="bnav-item" onclick="navMobile(this,'cartoes')"><span class="bicon">💳</span>Cartões</button>
       <button class="bnav-item" onclick="navMobile(this,'dividas')"><span class="bicon">📊</span>Dívidas</button>
+      <button class="bnav-item" onclick="navMobile(this,'dre')"><span class="bicon">📈</span>DRE</button>
+      <button class="bnav-item" onclick="navMobile(this,'diagnostico')"><span class="bicon">🩺</span>Diagn.</button>
+      <button class="bnav-item" onclick="navMobile(this,'metas')"><span class="bicon">🎯</span>Metas</button>
       <button class="bnav-item" onclick="navMobile(this,'contas')"><span class="bicon">🏦</span>Contas</button>
     </nav>
 
@@ -882,6 +907,112 @@ tbody tr:hover td{background:var(--bg)}
         </div>
       </div>
 
+
+
+      <!-- DIAGNÓSTICO -->
+      <div id="page-diagnostico" class="page">
+        <div class="page-title">🩺 Diagnóstico Financeiro</div>
+        <div class="page-sub">Análise automática da saúde financeira do casal</div>
+        <div class="grid2">
+          <div class="panel">
+            <h3>Alertas ativos</h3>
+            <div id="diagnosis-list"></div>
+          </div>
+          <div class="panel">
+            <h3>Ações recomendadas</h3>
+            <div id="action-list"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>📊 Orçamento por categoria — mês atual</h3>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Compare o gasto real com o limite planejado</p>
+          <div id="budget-list"></div>
+        </div>
+      </div>
+
+      <!-- METAS -->
+      <div id="page-metas" class="page">
+        <div class="page-title">🎯 Metas Financeiras</div>
+        <div class="page-sub">Defina objetivos e acompanhe o progresso</div>
+        <div class="form-panel">
+          <h3>Nova meta</h3>
+          <div class="form-row">
+            <div class="form-group"><label>Nome da meta</label><input id="goal-name" placeholder="ex: Viagem, Reserva emergência..."></div>
+            <div class="form-group"><label>Valor objetivo (R$)</label><input id="goal-target" type="number" step="0.01" placeholder="0,00"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Valor atual (R$)</label><input id="goal-current" type="number" step="0.01" placeholder="0,00"></div>
+            <div class="form-group"><label>Prazo</label><input id="goal-prazo" type="date"></div>
+          </div>
+          <button class="btn btn-primary" onclick="criarMeta()">+ Adicionar meta</button>
+        </div>
+        <div id="goals-grid" class="grid2" style="margin-top:16px"></div>
+      </div>
+
+      <!-- CONFIGURAÇÕES -->
+      <div id="page-configuracoes" class="page">
+        <div class="page-title">⚙️ Configurações</div>
+        <div class="page-sub">Membros, categorias e preferências</div>
+        <div class="grid2">
+          <div class="panel">
+            <h3>Membros do casal</h3>
+            <div id="members-list"></div>
+            <div class="divider"></div>
+            <h3 style="margin-bottom:10px">Convidar membro</h3>
+            <div class="form-group" style="margin-bottom:8px"><label>Email</label><input id="invite-email" placeholder="email@exemplo.com" type="email"></div>
+            <div class="form-group" style="margin-bottom:10px"><label>Papel</label>
+              <select id="invite-role">
+                <option value="member">Membro</option>
+                <option value="viewer">Visualizador</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="convidarMembro()">Convidar</button>
+          </div>
+          <div class="panel">
+            <h3>Limites de orçamento</h3>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Defina o limite mensal por categoria</p>
+            <div id="budget-config-list"></div>
+            <button class="btn btn-secondary" style="margin-top:10px" onclick="salvarOrcamento()">💾 Salvar limites</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Apelidos</h3>
+          <div class="form-row">
+            <div class="form-group"><label>Seu apelido</label><input id="cfg-apelido" placeholder="ex: Léo"></div>
+            <div class="form-group" style="display:flex;align-items:flex-end"><button class="btn btn-primary" onclick="salvarApelido()">Salvar</button></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DRE -->
+      <div id="page-dre" class="page">
+        <div class="page-title">DRE — Demonstração de Resultado</div>
+        <div class="page-sub">Receitas − Custos − Despesas Fixas = Resultado Operacional · valores se carregam mês a mês</div>
+
+        <div class="dre-ano-sel">
+          <label style="font-size:13px;font-weight:500">Ano:</label>
+          <select id="dre-ano" onchange="renderDRE()" style="padding:7px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;background:var(--bg);color:var(--text)">
+            <option value="2025">2025</option>
+            <option value="2026" selected>2026</option>
+            <option value="2027">2027</option>
+          </select>
+          <button class="btn btn-secondary" onclick="exportarDRE()" style="margin-left:auto">⬇ Exportar CSV</button>
+          <button class="btn btn-primary" onclick="salvarDRE()">💾 Salvar</button>
+        </div>
+
+        <div style="background:var(--amber-bg);border:1px solid var(--amber-light);border-radius:var(--radius);padding:10px 14px;font-size:12px;color:var(--amber);margin-bottom:14px">
+          💡 Os campos em <strong>azul</strong> são editáveis — clique para digitar. Os campos em branco são calculados automaticamente. O saldo passa de mês em mês automaticamente.
+        </div>
+
+        <div class="dre-wrap">
+          <table class="dre-table" id="dre-tabela">
+            <thead id="dre-thead"></thead>
+            <tbody id="dre-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -901,6 +1032,19 @@ tbody tr:hover td{background:var(--bg)}
 </div>
 
 <script>
+// ═══════════════════════════════════════════════════════════
+// SEGURANÇA — XSS Protection
+// ═══════════════════════════════════════════════════════════
+function escapeHTML(str) {
+  return String(str || '')
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;')
+    .replaceAll("'","&#039;");
+}
+function safeText(str) { return escapeHTML(str || ''); }
+
 // ═══════════════════════════════════════════════════════════
 // SUPABASE INIT
 // ═══════════════════════════════════════════════════════════
@@ -1120,6 +1264,10 @@ function navTo(page, fromMobile) {
   else if (page === 'contas') carregarContas();
   else if (page === 'dividas') carregarDividas();
   else if (page === 'projecao') renderProjecao();
+  else if (page === 'dre') carregarDREbanco();
+  else if (page === 'diagnostico') carregarDiagnostico();
+  else if (page === 'metas') carregarMetas();
+  else if (page === 'configuracoes') carregarConfiguracoes();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1573,7 +1721,7 @@ async function carregarDashboard() {
   `;
 
   // Contas — usa saldos reais dos extratos + contas do banco
-  const { data: contasDB } = await sb.from('contas').select('*').order('nome');
+  const { data: contasDB } = await sb.from('contas').select('*').is('deleted_at', null).order('nome');
   const todasContas = contasDB && contasDB.length > 0 ? contasDB : SALDOS_CONTAS_REAIS;
   const totalContas = todasContas.reduce((a,c) => a + (c.saldo||0), 0);
 
@@ -1811,7 +1959,7 @@ async function carregarLancamentos() {
   const pessoaF = document.getElementById('f-lan-pessoa')?.value || '';
 
   // Buscar todos os lançamentos do casal
-  let q = sb.from('lancamentos').select('*').order('data', {ascending:false});
+  let q = sb.from('lancamentos').select('*').is('deleted_at', null).order('data', {ascending:false});
   if (mes)  q = q.eq('mes', mes);
   if (tipo) q = q.eq('tipo', tipo);
   if (cat)  q = q.eq('categoria', cat);
@@ -1877,7 +2025,7 @@ async function carregarLancamentos() {
           ${l.lancado_por || (l.user_id === currentUser.id ? (nomeExibidoGlobal||'Eu') : 'Parceiro')}
         </span>
       </td>
-      <td style="font-weight:500">${l.descricao}</td>
+      <td style="font-weight:500">${safeText(l.descricao)}</td>
       <td><span class="badge gray" style="font-size:11px">${l.categoria}</span></td>
       <td><span class="badge ${tipoBadge}">${l.tipo}</span></td>
       <td style="font-weight:600;color:var(--${cor});white-space:nowrap">${BRL(l.valor)}</td>
@@ -1889,11 +2037,19 @@ async function carregarLancamentos() {
 }
 
 async function deletarLancamento(id) {
-  if (!confirm('Remover este lançamento?')) return;
-  const { error } = await sb.from('lancamentos').delete().eq('id', id).eq('user_id', currentUser.id);
-  if (error) { toast('Erro ao remover', 'error'); return; }
+  if (!confirm('Remover este lançamento? O histórico será preservado.')) return;
+  // Soft delete — preserva histórico
+  const { error } = await sb.from('lancamentos')
+    .update({ deleted_at: new Date().toISOString(), deleted_by: currentUser.id })
+    .eq('id', id)
+    .eq('user_id', currentUser.id);
+  if (error) {
+    // Fallback: hard delete se coluna não existir ainda
+    const { error: e2 } = await sb.from('lancamentos').delete().eq('id', id).eq('user_id', currentUser.id);
+    if (e2) { toast('Erro ao remover', 'error'); return; }
+  }
   toast('Removido!');
-  cacheAllLans = null; // invalidar cache
+  cacheAllLans = null;
   await carregarLancamentos();
   await carregarDashboard();
 }
@@ -1907,7 +2063,7 @@ async function carregarExtrato() {
   const tipo   = document.getElementById('f-ext-tipo')?.value || '';
   const pessoa = '';
 
-  let q = sb.from('lancamentos').select('*').order('data', {ascending:false}).limit(500);
+  let q = sb.from('lancamentos').select('*').is('deleted_at', null).order('data', {ascending:false}).limit(500);
   if (mes)  q = q.eq('mes', mes);
   if (tipo) q = q.eq('tipo', tipo);
   if (pessoa === 'leo') q = q.eq('user_id', currentUser.id);
@@ -1933,7 +2089,7 @@ async function carregarExtrato() {
         return `<tr>
           <td>${fmtData(l.data)}</td>
           <td><span class="badge ${['leo','léo','leonardo'].some(n=>l.lancado_por?.toLowerCase().includes(n))?'blue':'purple'}" style="font-size:10px;min-width:32px;text-align:center">${l.lancado_por||'—'}</span></td>
-          <td>${l.descricao}</td>
+          <td>${safeText(l.descricao)}</td>
           <td><span class="badge gray">${l.categoria}</span></td>
           <td><span class="badge ${cor}">${l.tipo}</span></td>
           <td style="font-size:11px;color:var(--muted)">${l.conta_nome||'—'}</td>
@@ -1969,7 +2125,7 @@ async function addFixa() {
 }
 
 async function carregarFixas() {
-  const { data: fixas } = await sb.from('fixas').select('*')
+  const { data: fixas } = await sb.from('fixas').select('*').is('deleted_at', null)
     .eq('user_id', currentUser.id).eq('ativo', true).order('tipo').order('valor', {ascending:false});
 
   const receitas  = (fixas||[]).filter(f => f.tipo === 'receita');
@@ -2055,7 +2211,7 @@ async function addParcela() {
 }
 
 async function carregarCartoes() {
-  const { data: cartoes } = await sb.from('cartoes').select('*').eq('user_id', currentUser.id).order('nome');
+  const { data: cartoes } = await sb.from('cartoes').select('*').is('deleted_at', null).eq('user_id', currentUser.id).order('nome');
   const { data: parcelas } = await sb.from('parcelas_cartao').select('*,cartoes(nome)').eq('user_id', currentUser.id).order('created_at',{ascending:false});
 
   // Preencher select de cartão
@@ -2109,7 +2265,10 @@ async function carregarCartoes() {
 
 async function deletarCartao(id) {
   if (!confirm('Remover este cartão?')) return;
-  await sb.from('cartoes').delete().eq('id', id).eq('user_id', currentUser.id);
+  const { error: _e } = await sb.from('cartoes')
+    .update({ deleted_at: new Date().toISOString(), deleted_by: currentUser.id })
+    .eq('id', id).eq('user_id', currentUser.id);
+  if (_e) await sb.from('cartoes').delete().eq('id', id); // fallback
   toast('Removido!');
   await carregarCartoes();
 }
@@ -2132,7 +2291,7 @@ async function addConta() {
 }
 
 async function carregarContas() {
-  const { data: contas } = await sb.from('contas').select('*').eq('user_id', currentUser.id).order('tipo').order('nome');
+  const { data: contas } = await sb.from('contas').select('*').is('deleted_at', null).eq('user_id', currentUser.id).order('tipo').order('nome');
 
   const correntes  = (contas||[]).filter(c => c.tipo !== 'beneficio');
   const beneficios = (contas||[]).filter(c => c.tipo === 'beneficio');
@@ -2170,7 +2329,10 @@ async function carregarContas() {
 
 async function deletarConta(id) {
   if (!confirm('Remover esta conta?')) return;
-  await sb.from('contas').delete().eq('id', id).eq('user_id', currentUser.id);
+  const { error: _e } = await sb.from('contas')
+    .update({ deleted_at: new Date().toISOString(), deleted_by: currentUser.id })
+    .eq('id', id).eq('user_id', currentUser.id);
+  if (_e) await sb.from('contas').delete().eq('id', id); // fallback
   toast('Removido!');
   await carregarContas();
 }
@@ -2195,7 +2357,7 @@ async function addDivida() {
 }
 
 async function carregarDividas() {
-  const { data: dividas } = await sb.from('dividas').select('*').eq('user_id', currentUser.id).order('saldo_devedor',{ascending:false});
+  const { data: dividas } = await sb.from('dividas').select('*').is('deleted_at', null).eq('user_id', currentUser.id).order('saldo_devedor',{ascending:false});
 
   const total  = (dividas||[]).reduce((a,d) => a+d.saldo_devedor, 0);
   const mensal = (dividas||[]).reduce((a,d) => a+d.valor_parcela, 0);
@@ -2234,7 +2396,10 @@ async function carregarDividas() {
 
 async function deletarDivida(id) {
   if (!confirm('Remover esta dívida?')) return;
-  await sb.from('dividas').delete().eq('id', id).eq('user_id', currentUser.id);
+  const { error: _e } = await sb.from('dividas')
+    .update({ deleted_at: new Date().toISOString(), deleted_by: currentUser.id })
+    .eq('id', id).eq('user_id', currentUser.id);
+  if (_e) await sb.from('dividas').delete().eq('id', id); // fallback
   toast('Removido!');
   await carregarDividas();
 }
@@ -2247,7 +2412,7 @@ async function renderProjecao() {
   const alertaVal    = parseFloat(document.getElementById('proj-alerta')?.value) || 500;
 
   // Buscar lançamentos recorrentes
-  const { data: recs } = await sb.from('lancamentos').select('*')
+  const { data: recs } = await sb.from('lancamentos').select('*').is('deleted_at', null)
     .eq('user_id', currentUser.id).eq('recorrente', 'mensal');
 
   const dias = [];
@@ -2319,6 +2484,421 @@ const savedTheme = localStorage.getItem('theme');
 if (savedTheme === 'dark') {
   document.documentElement.setAttribute('data-theme', 'dark');
   document.getElementById('theme-label').textContent = 'Modo claro';
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// DRE — Demonstração de Resultado do Exercício
+// ═══════════════════════════════════════════════════════════════
+const DRE_MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+// Estrutura da DRE (baseada no modelo da loja)
+const DRE_LINHAS = [
+  // RECEITAS
+  { id:'receita_total',    label:'Receita Total',          tipo:'input',   secao:'receita',  bold:true  },
+  { id:'taxa_cartao',      label:'Taxa do Cartão (%)',      tipo:'pct',     secao:'receita'              },
+  { id:'venda_sem_taxa',   label:'Venda sem taxa',          tipo:'calc',    secao:'receita',
+    formula: (v,m) => v.receita_total[m] * (1 - (v.taxa_cartao[m]||0)/100) },
+  { id:'custo_produto',    label:'Custo do Produto',        tipo:'input',   secao:'receita'              },
+  { id:'embalagens',       label:'Embalagens',              tipo:'input',   secao:'receita'              },
+
+  // LUCRO PRODUTO
+  { id:'lucro_produto',    label:'Lucro Produto (LP)',      tipo:'total',   secao:'lp',       bold:true,
+    formula: (v,m) => v.venda_sem_taxa[m] - (v.custo_produto[m]||0) - (v.embalagens[m]||0) },
+  { id:'lucro_produto_pct',label:'Lucro Produto (%)',       tipo:'pct_calc',secao:'lp',
+    formula: (v,m) => v.receita_total[m] > 0 ? (v.lucro_produto[m]/v.receita_total[m]*100) : 0 },
+
+  // DESPESAS FIXAS
+  { id:'aluguel',          label:'Aluguel',                 tipo:'input',   secao:'fixas'                },
+  { id:'agua',             label:'Água',                    tipo:'input',   secao:'fixas'                },
+  { id:'luz',              label:'Luz',                     tipo:'input',   secao:'fixas'                },
+  { id:'internet',         label:'Internet',                tipo:'input',   secao:'fixas'                },
+  { id:'canva',            label:'Canva / Design',          tipo:'input',   secao:'fixas'                },
+  { id:'mei',              label:'MEI',                     tipo:'input',   secao:'fixas'                },
+  { id:'sistema',          label:'Sistema',                 tipo:'input',   secao:'fixas'                },
+  { id:'google_domain',    label:'Google / Domínio',        tipo:'input',   secao:'fixas'                },
+  { id:'cartao_isa',       label:'Cartão de Crédito Isa',   tipo:'input',   secao:'fixas'                },
+  { id:'cartao_leo',       label:'Cartão de Crédito Léo',   tipo:'input',   secao:'fixas'                },
+  { id:'outras_fixas',     label:'Outras despesas fixas',   tipo:'input',   secao:'fixas'                },
+
+  // GASTO FIXO TOTAL
+  { id:'gasto_fixo',       label:'Gasto Fixo (GF)',         tipo:'total',   secao:'gf',       bold:true,
+    formula: (v,m) => ['aluguel','agua','luz','internet','canva','mei','sistema','google_domain','cartao_isa','cartao_leo','outras_fixas'].reduce((a,k)=>a+(v[k]?.[m]||0),0) },
+
+  // RESULTADO
+  { id:'lucro_operacional',label:'Lucro Operacional (LP-GF)',tipo:'total',  secao:'result',   bold:true,
+    formula: (v,m) => (v.lucro_produto[m]||0) - (v.gasto_fixo[m]||0) },
+  { id:'saldo_acumulado_dre',label:'Saldo Acumulado',       tipo:'acum',    secao:'result',   bold:true  },
+];
+
+// Dados da DRE por ano (persistido no Supabase)
+let dreData = {}; // { '2026': { receita_total: [0,0,...12], custo_produto: [...], ... } }
+let dreAno = '2026';
+
+function dreValores(ano) {
+  if (!dreData[ano]) {
+    dreData[ano] = {};
+    DRE_LINHAS.forEach(l => {
+      dreData[ano][l.id] = new Array(12).fill(0);
+    });
+  }
+  return dreData[ano];
+}
+
+function calcDRE(ano) {
+  const v = dreValores(ano);
+  // Calcular campos derivados
+  DRE_LINHAS.forEach(l => {
+    if (l.formula && (l.tipo === 'calc' || l.tipo === 'pct_calc' || l.tipo === 'total')) {
+      for (let m = 0; m < 12; m++) {
+        try { v[l.id][m] = l.formula(v, m); } catch(e) { v[l.id][m] = 0; }
+      }
+    }
+  });
+  // Saldo acumulado
+  let carry = 0;
+  for (let m = 0; m < 12; m++) {
+    carry += v.lucro_operacional[m] || 0;
+    v.saldo_acumulado_dre[m] = carry;
+  }
+  return v;
+}
+
+function renderDRE() {
+  dreAno = document.getElementById('dre-ano')?.value || '2026';
+  const v = calcDRE(dreAno);
+  const meses = DRE_MESES;
+
+  // Calcular totais anuais
+  const total = (id) => (v[id] || []).reduce((a,b) => a+b, 0);
+
+  // Thead
+  document.getElementById('dre-thead').innerHTML = `
+    <tr>
+      <th style="text-align:left;min-width:200px">Item</th>
+      ${meses.map(m => `<th>${m}</th>`).join('')}
+      <th style="color:var(--blue)">${dreAno}</th>
+    </tr>`;
+
+  // Tbody
+  let secaoAtual = '';
+  const rows = DRE_LINHAS.map(l => {
+    const isInput   = l.tipo === 'input' || l.tipo === 'pct';
+    const isTotal   = l.tipo === 'total' || l.tipo === 'acum';
+    const isPct     = l.tipo === 'pct' || l.tipo === 'pct_calc';
+    const isAcum    = l.tipo === 'acum';
+
+    let secaoLabel = '';
+    if (l.secao !== secaoAtual) {
+      secaoAtual = l.secao;
+      const secTitles = {receita:'RECEITAS',lp:'LUCRO PRODUTO',fixas:'DESPESAS FIXAS',gf:'',result:'RESULTADO'};
+      if (secTitles[l.secao]) secaoLabel = `<tr class="dre-section"><td colspan="${14}">${secTitles[l.secao]}</td></tr>`;
+    }
+
+    const corClass = isTotal ? (isAcum ? '' : '') : '';
+    const rowClass = isTotal ? 'dre-total' : '';
+
+    const cells = v[l.id].map((val, m) => {
+      const cor = val > 0 ? 'dre-pos' : val < 0 ? 'dre-neg' : '';
+      if (isInput) {
+        return `<td><input class="dre-input" type="number" step="0.01"
+          value="${val || ''}" placeholder="-"
+          onchange="dreUpdate('${dreAno}','${l.id}',${m},this.value)"
+          onfocus="this.select()"></td>`;
+      }
+      if (isPct) {
+        return `<td class="${cor}" style="color:${val<0?'var(--red)':val>0?'':'var(--muted)'}">${val ? val.toFixed(1)+'%' : '-'}</td>`;
+      }
+      return `<td class="${cor}">${val ? BRL(val) : '-'}</td>`;
+    }).join('');
+
+    // Total anual
+    const tot = total(l.id);
+    const totCor = tot > 0 ? 'dre-pos' : tot < 0 ? 'dre-neg' : '';
+    const totCell = isPct
+      ? `<td class="${totCor}">${tot ? (tot/12).toFixed(1)+'%' : '-'}</td>`
+      : isInput
+        ? `<td style="font-weight:700;color:${tot>=0?'var(--green)':'var(--red)'}">${tot ? BRL(tot) : '-'}</td>`
+        : `<td class="${totCor}" style="font-weight:700">${tot ? BRL(tot) : '-'}</td>`;
+
+    return secaoLabel + `<tr class="${rowClass}">
+      <td style="padding-left:${isTotal?'12':'20'}px;font-weight:${l.bold?'700':'400'}">${l.label}</td>
+      ${cells}${totCell}
+    </tr>`;
+  }).join('');
+
+  document.getElementById('dre-tbody').innerHTML = rows;
+}
+
+function dreUpdate(ano, campo, mes, val) {
+  if (!dreData[ano]) dreValores(ano);
+  dreData[ano][campo][mes] = parseFloat(val) || 0;
+  // Recalcular e re-renderizar apenas as cells calculadas (não inputs)
+  const v = calcDRE(ano);
+  DRE_LINHAS.forEach(l => {
+    if (!['input','pct'].includes(l.tipo)) {
+      const cells = document.querySelectorAll(`#dre-tbody tr`);
+      // Simples: re-render completo
+    }
+  });
+  renderDRE(); // re-render completo (simples e confiável)
+}
+
+async function salvarDRE() {
+  if (!currentUser) return;
+  try {
+    const payload = JSON.stringify(dreData);
+    const { error } = await sb.from('dre_dados').upsert({
+      user_id: currentUser.id,
+      dados: payload,
+      updated_at: new Date().toISOString()
+    });
+    if (error) {
+      // Tabela pode não existir ainda
+      toast('Execute o SQL update_07_dre.sql no Supabase primeiro', 'error');
+    } else {
+      toast('✅ DRE salva!');
+    }
+  } catch(e) {
+    toast('Erro ao salvar: ' + e.message, 'error');
+  }
+}
+
+async function carregarDREbanco() {
+  if (!currentUser) return;
+  try {
+    const { data } = await sb.from('dre_dados')
+      .select('dados').eq('user_id', currentUser.id).single();
+    if (data?.dados) {
+      dreData = JSON.parse(data.dados);
+    }
+  } catch(e) { /* tabela pode não existir */ }
+  renderDRE();
+}
+
+function exportarDRE() {
+  const v = calcDRE(dreAno);
+  const meses = DRE_MESES;
+  let csv = 'Item,' + meses.join(',') + ',Total\n';
+  DRE_LINHAS.forEach(l => {
+    const vals = v[l.id].map(x => x ? x.toFixed(2) : '0');
+    const tot  = v[l.id].reduce((a,b)=>a+b,0);
+    csv += `"${l.label}",${vals.join(',')},${tot.toFixed(2)}\n`;
+  });
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `DRE_${dreAno}.csv`; a.click();
+  URL.revokeObjectURL(url);
+  toast('CSV exportado!');
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// DIAGNÓSTICO FINANCEIRO
+// ═══════════════════════════════════════════════════════════
+const ORCAMENTO_DEFAULT = {
+  'Moradia': 3200, 'Alimentação': 1800, 'Transporte': 800,
+  'Saúde': 400, 'Lazer': 500, 'Assinaturas': 300,
+  'Beleza': 250, 'Educação': 400, 'Outros': 500
+};
+let orcamentoLimites = JSON.parse(localStorage.getItem('orcamento_limites') || 'null') || {...ORCAMENTO_DEFAULT};
+
+async function carregarDiagnostico() {
+  // Carregar todos lançamentos para análise
+  const allLans = await getAllLancamentos();
+  const mes = mesMes();
+  const mesLans = allLans.filter(l => l.mes === mes && !l.deleted_at);
+  const paid = mesLans.filter(l => l.status !== '❌ Cancelado');
+
+  const entradas = paid.filter(l=>l.tipo==='Entrada').reduce((a,l)=>a+Math.abs(l.valor),0);
+  const saidas   = paid.filter(l=>l.tipo==='Saída').reduce((a,l)=>a+Math.abs(l.valor),0);
+  const invest   = paid.filter(l=>l.tipo==='Investimento').reduce((a,l)=>a+Math.abs(l.valor),0);
+  const comprometimento = entradas > 0 ? Math.round(saidas/entradas*100) : 0;
+
+  // Buscar contas e cartões
+  const { data: contas } = await sb.from('contas').select('*').eq('user_id', currentUser.id).is('deleted_at', null);
+  const { data: cartoes } = await sb.from('cartoes').select('*').eq('user_id', currentUser.id).is('deleted_at', null);
+  const { data: dividas } = await sb.from('dividas').select('*').eq('user_id', currentUser.id).is('deleted_at', null);
+
+  const contasNeg = (contas||[]).filter(c => c.saldo < 0);
+  const totalFaturas = (cartoes||[]).reduce((a,c)=>a+c.fatura_atual,0);
+  const totalDividas = (dividas||[]).reduce((a,d)=>a+d.saldo_devedor,0);
+  const parcelaMensal = (dividas||[]).reduce((a,d)=>a+d.valor_parcela,0);
+
+  // Gerar alertas
+  const alertas = [];
+  if (contasNeg.length) alertas.push(['🔴 Conta negativa', `${contasNeg.length} conta(s) com saldo negativo — total: ${BRL(contasNeg.reduce((a,c)=>a+c.saldo,0))}`, 'red']);
+  if (comprometimento >= 80) alertas.push(['🟡 Comprometimento alto', `${comprometimento}% da renda comprometida com gastos`, 'amber']);
+  if (totalFaturas > entradas * 0.3) alertas.push(['🟡 Faturas altas', `Faturas de cartão somam ${BRL(totalFaturas)} (${entradas>0?Math.round(totalFaturas/entradas*100):0}% da renda)`, 'amber']);
+  if (parcelaMensal > entradas * 0.4) alertas.push(['🔴 Dívidas pesadas', `Parcelas mensais de ${BRL(parcelaMensal)} comprometem ${entradas>0?Math.round(parcelaMensal/entradas*100):0}% da renda`, 'red']);
+  if (invest === 0) alertas.push(['💡 Sem investimentos', 'Nenhum investimento registrado este mês', 'blue']);
+  if (!alertas.length) alertas.push(['🟢 Situação controlada', 'Nenhum alerta crítico identificado este mês!', 'green']);
+
+  document.getElementById('diagnosis-list').innerHTML = alertas.map(([titulo, desc, cor]) => `
+    <div class="conta-item">
+      <div><div class="cn">${titulo}</div><div class="ct">${desc}</div></div>
+      <span class="badge ${cor==='red'?'red':cor==='amber'?'amber':cor==='blue'?'blue':'green'}">${cor==='red'?'Crítico':cor==='amber'?'Atenção':cor==='blue'?'Dica':'OK'}</span>
+    </div>`).join('');
+
+  // Ações recomendadas
+  const acoes = [];
+  if (comprometimento >= 80) acoes.push(['Controlar variáveis', 'Evitar delivery e compras não essenciais por 15 dias', 'red']);
+  if (contasNeg.length) acoes.push(['Zerar conta negativa', 'Direcionar próxima receita para conta negativa primeiro', 'amber']);
+  if (totalFaturas > 0) acoes.push(['Revisar cartão', 'Separar compras essenciais de parcelamentos futuros', 'amber']);
+  if (invest === 0 && entradas > saidas) acoes.push(['Investir sobra', `Você tem ${BRL(entradas-saidas)} sobrando — considere investir`, 'blue']);
+  if (!acoes.length) acoes.push(['Manter ritmo', 'Continue acompanhando semanalmente', 'green']);
+
+  document.getElementById('action-list').innerHTML = acoes.map(([a, d, cor]) => `
+    <div class="conta-item">
+      <div><div class="cn">${a}</div><div class="ct">${d}</div></div>
+      <span class="badge ${cor==='red'?'red':cor==='amber'?'amber':cor==='blue'?'blue':'green'}">Ação</span>
+    </div>`).join('');
+
+  // Orçamento por categoria
+  const catGastos = {};
+  paid.filter(l=>l.tipo==='Saída').forEach(l => {
+    const c = l.categoria || 'Outros';
+    catGastos[c] = (catGastos[c]||0) + Math.abs(l.valor);
+  });
+
+  document.getElementById('budget-list').innerHTML = Object.entries(orcamentoLimites).map(([cat, limit]) => {
+    const gasto = catGastos[cat] || 0;
+    const pct = limit ? Math.min(100, Math.round(gasto/limit*100)) : 0;
+    const cor = pct >= 100 ? 'red' : pct >= 80 ? 'amber' : 'green';
+    return `<div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+        <span style="font-weight:500">${cat}</span>
+        <span style="color:var(--${cor});font-weight:600">${BRL(gasto)} / ${BRL(limit)}</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:var(--${cor})"></div></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">${pct}% do limite · ${pct<100?'Faltam '+BRL(limit-gasto):'⚠️ Limite ultrapassado em '+BRL(gasto-limit)}</div>
+    </div>`;
+  }).join('');
+}
+
+function salvarOrcamento() {
+  const inputs = document.querySelectorAll('[data-orcamento]');
+  inputs.forEach(inp => {
+    const cat = inp.dataset.orcamento;
+    const val = parseFloat(inp.value) || 0;
+    if (val > 0) orcamentoLimites[cat] = val;
+  });
+  localStorage.setItem('orcamento_limites', JSON.stringify(orcamentoLimites));
+  toast('✅ Limites de orçamento salvos!');
+  carregarDiagnostico();
+}
+
+// ═══════════════════════════════════════════════════════════
+// METAS FINANCEIRAS
+// ═══════════════════════════════════════════════════════════
+async function criarMeta() {
+  const nome   = document.getElementById('goal-name')?.value?.trim();
+  const target = parseFloat(document.getElementById('goal-target')?.value || 0);
+  const atual  = parseFloat(document.getElementById('goal-current')?.value || 0);
+  const prazo  = document.getElementById('goal-prazo')?.value || null;
+  if (!nome || !target) { toast('Informe nome e valor objetivo', 'error'); return; }
+  const { error } = await sb.from('metas').insert({
+    user_id: currentUser.id, nome, valor_objetivo: target,
+    valor_atual: atual, prazo, created_at: new Date().toISOString()
+  });
+  if (error) {
+    // Fallback: salvar em localStorage se tabela não existir
+    const metas = JSON.parse(localStorage.getItem('metas_local')||'[]');
+    metas.push({ id: Date.now(), nome, valor_objetivo: target, valor_atual: atual, prazo });
+    localStorage.setItem('metas_local', JSON.stringify(metas));
+    toast('✅ Meta salva localmente!');
+  } else {
+    toast('✅ Meta criada!');
+  }
+  ['goal-name','goal-target','goal-current'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  carregarMetas();
+}
+
+async function carregarMetas() {
+  let metas = [];
+  try {
+    const { data } = await sb.from('metas').select('*').eq('user_id', currentUser.id).order('created_at', {ascending:false});
+    metas = data || [];
+  } catch(e) {
+    metas = JSON.parse(localStorage.getItem('metas_local')||'[]');
+  }
+
+  document.getElementById('goals-grid').innerHTML = metas.length
+    ? metas.map(m => {
+        const pct = m.valor_objetivo > 0 ? Math.min(100, Math.round((m.valor_atual||0)/m.valor_objetivo*100)) : 0;
+        const cor = pct >= 100 ? 'green' : pct >= 50 ? 'blue' : 'amber';
+        const prazoStr = m.prazo ? `Prazo: ${fmtData(m.prazo)}` : '';
+        return `<div class="card">
+          <div class="card-label">${safeText(m.nome)} ${prazoStr ? '<span style="font-size:10px;color:var(--muted)">· '+prazoStr+'</span>' : ''}</div>
+          <div class="card-value ${cor}">${BRL(m.valor_atual||0)}</div>
+          <div style="font-size:12px;color:var(--muted);margin:4px 0">Meta: ${BRL(m.valor_objetivo)} · ${pct}%</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:var(--${cor})"></div></div>
+          <div style="margin-top:10px;display:flex;gap:8px">
+            <input type="number" placeholder="Atualizar valor" style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg);color:var(--text)" id="meta-val-${m.id}">
+            <button class="btn btn-primary btn-sm" onclick="atualizarMeta('${m.id}')">Atualizar</button>
+          </div>
+        </div>`;
+      }).join('')
+    : '<div class="empty"><div class="empty-icon">🎯</div><p>Nenhuma meta cadastrada</p></div>';
+}
+
+async function atualizarMeta(id) {
+  const inp = document.getElementById('meta-val-'+id);
+  const val = parseFloat(inp?.value || 0);
+  if (!val) return;
+  try {
+    await sb.from('metas').update({ valor_atual: val }).eq('id', id);
+  } catch(e) {
+    const metas = JSON.parse(localStorage.getItem('metas_local')||'[]');
+    const m = metas.find(x=>String(x.id)===String(id));
+    if (m) { m.valor_atual = val; localStorage.setItem('metas_local', JSON.stringify(metas)); }
+  }
+  toast('✅ Meta atualizada!');
+  carregarMetas();
+}
+
+// ═══════════════════════════════════════════════════════════
+// CONFIGURAÇÕES
+// ═══════════════════════════════════════════════════════════
+async function carregarConfiguracoes() {
+  // Membros
+  const { data: perfil } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+  if (perfil?.apelido) document.getElementById('cfg-apelido').value = perfil.apelido;
+
+  // Limites orçamento
+  const cats = ['Moradia','Alimentação','Transporte','Saúde','Lazer','Assinaturas','Beleza','Educação','Outros'];
+  document.getElementById('budget-config-list').innerHTML = cats.map(cat => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:0.5px solid var(--border)">
+      <span style="font-size:13px">${cat}</span>
+      <input type="number" data-orcamento="${cat}" value="${orcamentoLimites[cat]||0}"
+        style="width:100px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;text-align:right;background:var(--bg);color:var(--text)">
+    </div>`).join('');
+
+  // Mostrar membros (quem está logado)
+  document.getElementById('members-list').innerHTML = `
+    <div class="conta-item">
+      <div><div class="cn">${safeText(nomeExibidoGlobal || currentUser.email)}</div><div class="ct">${safeText(currentUser.email)} · Admin</div></div>
+      <span class="badge blue">Admin</span>
+    </div>`;
+}
+
+async function salvarApelido() {
+  const apelido = document.getElementById('cfg-apelido')?.value?.trim();
+  if (!apelido) return;
+  const { error } = await sb.from('profiles').update({ apelido }).eq('id', currentUser.id);
+  if (error) { toast('Erro: ' + error.message, 'error'); return; }
+  nomeExibidoGlobal = apelido;
+  document.getElementById('user-name').textContent = apelido;
+  document.getElementById('lan-form-title').textContent = 'Novo lançamento — ' + apelido;
+  toast('✅ Apelido salvo! Já aparece em todo o app.');
+}
+
+async function convidarMembro() {
+  const email = document.getElementById('invite-email')?.value?.trim();
+  if (!email) { toast('Informe o email', 'error'); return; }
+  toast(`Para convidar ${email}: crie o usuário em Supabase → Authentication → Users → Invite user. Ele receberá um email para definir a senha e já terá acesso aos dados do casal.`, 'info');
+  toast('💡 Dica: o casal compartilha dados pelo projeto Supabase, não precisa de convite formal.');
 }
 
 function fecharModal() {
