@@ -1625,72 +1625,102 @@ async function renderChartMensal() {
 // LANÇAMENTOS
 // ═══════════════════════════════════════════════════════════
 async function addLancamento() {
-  const desc   = document.getElementById('l-desc').value.trim();
-  const valor  = parseFloat(document.getElementById('l-valor').value);
-  const tipo   = tipoAtual || 'Saída';
-  const cat    = document.getElementById('l-cat').value;
-  const data   = document.getElementById('l-data').value || hoje();
-  const status = document.getElementById('l-status').value;
-  const obs    = document.getElementById('l-obs').value.trim();
-  const recFlag = document.getElementById('l-rec-flag').checked;
-  const recAte  = document.getElementById('l-rec-ate')?.value || '';
+  try {
+    // Ler campos com segurança (?.value evita erro se campo não existir)
+    const desc   = document.getElementById('l-desc')?.value?.trim() || '';
+    const valor  = parseFloat(document.getElementById('l-valor')?.value || '0');
+    const tipo   = tipoAtual || 'Saída';
+    const cat    = document.getElementById('l-cat')?.value || 'Outros';
+    const subcat = document.getElementById('l-subcat')?.value || '';
+    const data   = document.getElementById('l-data')?.value || hoje();
+    const status = document.getElementById('l-status')?.value || '✅ Pago';
+    const recFlag = document.getElementById('l-rec-flag')?.checked || false;
+    const recAte  = document.getElementById('l-rec-ate')?.value || '';
+    const pagamento = document.getElementById('l-pagamento')?.value || '';
+    const parcelas  = parseInt(document.getElementById('l-parcelas')?.value || '1');
+    const banco     = document.getElementById('l-banco')?.value || '';
+    const nomeUser  = nomeExibidoGlobal || currentUserNome || 'Léo';
 
-  if (!desc || !valor || valor <= 0) { toast('Preencha descrição e valor', 'error'); return; }
+    // Validação
+    if (!desc) { toast('Preencha a descrição', 'error'); return; }
+    if (!valor || valor <= 0) { toast('Preencha o valor', 'error'); return; }
+    if (!data) { toast('Preencha a data', 'error'); return; }
 
-  const valorFinal = tipo === 'Saída' ? -Math.abs(valor) : Math.abs(valor);
+    const valorFinal = tipo === 'Saída' ? -Math.abs(valor) : Math.abs(valor);
+    const categoriaFinal = subcat || cat;
 
-  const pagamento = document.getElementById('l-pagamento')?.value || '';
-  const parcelas  = parseInt(document.getElementById('l-parcelas')?.value || '1');
-  const banco     = document.getElementById('l-banco')?.value || '';
+    // Objeto base do lançamento
+    const base = {
+      user_id:         currentUser.id,
+      lancado_por:     nomeUser,
+      descricao:       desc,
+      valor:           valorFinal,
+      tipo:            tipo,
+      categoria:       categoriaFinal,
+      data:            data,
+      status:          status,
+      recorrente:      recFlag ? 'mensal' : 'nao',
+      forma_pagamento: pagamento,
+      parcelas:        parcelas,
+      conta_nome:      banco,
+    };
 
-  if (recFlag && recAte) {
-    // Criar lançamentos para todos os meses até a data limite
-    const [anoI, mesI, diaI] = data.split('-').map(Number);
-    const [anoF, mesF]       = recAte.split('-').map(Number);
-    const inserts = [];
-    let a = anoI, m = mesI;
-    while (a < anoF || (a === anoF && m <= mesF)) {
-      const diasMes = new Date(a, m, 0).getDate();
-      const d = String(Math.min(diaI, diasMes)).padStart(2,'0');
-      const dataLan = `${a}-${String(m).padStart(2,'0')}-${d}`;
-      inserts.push({
-        user_id: currentUser.id, lancado_por: nomeExibidoGlobal || currentUserNome,
-        descricao: desc, valor: valorFinal, tipo, categoria: cat,
-        data: dataLan, status, observacao: obs, recorrente: 'mensal',
-        forma_pagamento: pagamento, parcelas, conta_nome: banco
-      });
-      m++; if (m > 12) { m = 1; a++; }
+    if (recFlag && recAte) {
+      // RECORRENTE — criar um lançamento por mês até recAte
+      const [anoI, mesI, diaI] = data.split('-').map(Number);
+      const [anoF, mesF]       = recAte.split('-').map(Number);
+      const inserts = [];
+      let a = anoI, m = mesI;
+
+      while (a < anoF || (a === anoF && m <= mesF)) {
+        const diasMes = new Date(a, m, 0).getDate();
+        const dia     = String(Math.min(diaI, diasMes)).padStart(2, '0');
+        const dataLan = `${a}-${String(m).padStart(2, '0')}-${dia}`;
+        inserts.push({ ...base, data: dataLan });
+        m++; if (m > 12) { m = 1; a++; }
+      }
+
+      if (inserts.length === 0) { toast('Datas inválidas', 'error'); return; }
+
+      toast(`💾 Salvando ${inserts.length} lançamentos...`);
+
+      // Enviar em lotes de 20 (mais seguro)
+      const CHUNK = 20;
+      for (let i = 0; i < inserts.length; i += CHUNK) {
+        const { error } = await sb.from('lancamentos').insert(inserts.slice(i, i + CHUNK));
+        if (error) {
+          toast('Erro: ' + error.message, 'error');
+          console.error('Insert error:', error);
+          return;
+        }
+      }
+      toast(`✅ ${inserts.length} lançamentos criados!`);
+
+    } else {
+      // ÚNICO
+      const { data: saved, error } = await sb.from('lancamentos').insert(base).select();
+      if (error) {
+        toast('Erro ao salvar: ' + error.message, 'error');
+        console.error('Insert error:', error, 'Payload:', base);
+        return;
+      }
+      toast('✅ Lançamento salvo!');
     }
-    toast(`Salvando ${inserts.length} lançamentos...`, 'info');
-    // Supabase limita insert em lote — dividir em chunks de 50
-    const CHUNK = 50;
-    for (let i = 0; i < inserts.length; i += CHUNK) {
-      const chunk = inserts.slice(i, i + CHUNK);
-      const { error } = await sb.from('lancamentos').insert(chunk);
-      if (error) { toast('Erro ao salvar: ' + error.message, 'error'); return; }
-    }
-    toast(`✅ ${inserts.length} lançamentos criados até ${recAte}!`);
-  } else {
-    const { error } = await sb.from('lancamentos').insert({
-      user_id: currentUser.id, lancado_por: nomeExibidoGlobal || currentUserNome,
-      descricao: desc, valor: valorFinal,
-      tipo, categoria: cat, data, status, observacao: obs,
-      recorrente: recFlag ? 'mensal' : 'nao',
-      forma_pagamento: pagamento, parcelas: parseInt(parcelas), conta_nome: banco
-    });
-    if (error) { toast('Erro ao salvar: ' + error.message, 'error'); return; }
-    toast('Lançamento adicionado!');
+
+    limparFormLan();
+    await carregarLancamentos();
+    await carregarDashboard();
+
+  } catch(err) {
+    toast('Erro inesperado: ' + (err.message || err), 'error');
+    console.error('addLancamento error:', err);
   }
-
-  limparFormLan();
-  await carregarLancamentos();
-  await carregarDashboard();
 }
 
 function limparFormLan() {
   document.getElementById('l-desc').value = '';
   document.getElementById('l-valor').value = '';
-  document.getElementById('l-obs').value = '';
+  // l-obs removido do formulário
   document.getElementById('l-data').value = hoje();
   const flag = document.getElementById('l-rec-flag');
   if (flag) flag.checked = false;
@@ -1712,15 +1742,15 @@ async function carregarLancamentos() {
 
   const pessoaF = document.getElementById('f-lan-pessoa')?.value || '';
 
-  // Buscar todos os lançamentos do casal (RLS já permite)
+  // Buscar todos os lançamentos do casal
   let q = sb.from('lancamentos').select('*').order('data', {ascending:false});
   if (mes)  q = q.eq('mes', mes);
   if (tipo) q = q.eq('tipo', tipo);
   if (cat)  q = q.eq('categoria', cat);
-  // Filtro por pessoa
-  if (pessoaF === 'leo') {
+  // Filtro por pessoa (eu = minha conta, parceiro = outra conta)
+  if (pessoaF === 'eu') {
     q = q.eq('user_id', currentUser.id);
-  } else if (pessoaF === 'isa') {
+  } else if (pessoaF === 'parceiro') {
     q = q.neq('user_id', currentUser.id);
   }
   q = q.limit(500);
@@ -1743,9 +1773,10 @@ async function carregarLancamentos() {
   const pessoaAtualF = document.getElementById('f-lan-pessoa')?.value || '';
   const listTitle = document.getElementById('lan-list-title');
   if (listTitle) {
-    listTitle.textContent = pessoaAtualF === 'leo' ? `Lançamentos de Léo`
-      : pessoaAtualF === 'isa' ? `Lançamentos de Isa`
-      : `Lançamentos do Casal`;
+    const meNome = nomeExibidoGlobal || 'Léo';
+    listTitle.textContent = pessoaAtualF === 'eu' ? `Meus lançamentos (${meNome})`
+      : pessoaAtualF === 'parceiro' ? `Lançamentos do parceiro`
+      : `Lançamentos do casal`;
   }
 
   const tbody = document.getElementById('t-lancamentos');
@@ -1759,7 +1790,11 @@ async function carregarLancamentos() {
     const cor = l.tipo === 'Entrada' ? 'green' : l.tipo === 'Investimento' ? 'blue' : 'red';
     return `<tr>
       <td>${fmtData(l.data)}</td>
-      <td><span class="badge ${['leo','léo','leonardo'].some(n=>l.lancado_por?.toLowerCase().includes(n))?'blue':'purple'}" style="min-width:36px;text-align:center">${l.lancado_por||'—'}</span></td>
+      <td>
+        <span class="badge ${l.user_id === currentUser.id ? 'blue' : 'purple'}" style="min-width:40px;text-align:center">
+          ${l.lancado_por || (l.user_id === currentUser.id ? (nomeExibidoGlobal||'Eu') : 'Parceiro')}
+        </span>
+      </td>
       <td style="font-weight:500">${l.descricao}</td>
       <td><span class="badge gray">${l.categoria}</span></td>
       <td><span class="badge ${tipoBadge}">${l.tipo}</span></td>
