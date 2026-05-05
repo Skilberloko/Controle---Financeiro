@@ -272,6 +272,7 @@ tbody tr:hover td{background:var(--bg)}
 }
 .toast.show{transform:translateY(0);opacity:1}
 .toast.success{background:var(--green)}
+.toast.info{background:var(--blue)}
 .toast.error{background:var(--red)}
 
 /* ── MODAL ────────────────────────────────────────────────── */
@@ -610,13 +611,13 @@ tbody tr:hover td{background:var(--bg)}
             <span>📊</span> Todos
           </button>
           <button class="btn-banco" id="tab-itau" onclick="setExtratoBanco('itau',this)">
-            <img src="https://logo.clearbit.com/itau.com.br" onerror="this.style.display='none'" style="width:16px;height:16px;border-radius:3px"> Itaú
+            <img src="https://www.google.com/s2/favicons?domain=itau.com.br&sz=64" onerror="this.style.display='none'" style="width:16px;height:16px;border-radius:3px"> Itaú
           </button>
           <button class="btn-banco" id="tab-nubank" onclick="setExtratoBanco('nubank',this)">
-            <img src="https://logo.clearbit.com/nubank.com.br" onerror="this.style.display='none'" style="width:16px;height:16px;border-radius:3px"> Nubank PF
+            <img src="https://www.google.com/s2/favicons?domain=nubank.com.br&sz=64" onerror="this.style.display='none'" style="width:16px;height:16px;border-radius:3px"> Nubank PF
           </button>
           <button class="btn-banco" id="tab-xp" onclick="setExtratoBanco('xp',this)">
-            <img src="https://logo.clearbit.com/xpi.com.br" onerror="this.style.display='none'" style="width:16px;height:16px;border-radius:3px"> XP
+            <img src="https://www.google.com/s2/favicons?domain=xpi.com.br&sz=64" onerror="this.style.display='none'" style="width:16px;height:16px;border-radius:3px"> XP
           </button>
           <button class="btn-banco" id="tab-meus" onclick="setExtratoBanco('meus',this)">
             <span>👤</span> Meus lanç.
@@ -1182,7 +1183,7 @@ function atualizarLogoBanco() {
 // ═══════════════════════════════════════════════════════════
 const HISTORICO_BANCOS = {
   itau: {
-    nome: 'Itaú', logo: 'https://logo.clearbit.com/itau.com.br',
+    nome: 'Itaú', logo: 'https://www.google.com/s2/favicons?domain=itau.com.br&sz=64',
     cor: '#EC7000', saldo_atual: -569.20,
     meses: [
       {mes:'Jan/26', entradas:21503.78, saidas:20638.67, saldo:865.11},
@@ -1194,7 +1195,7 @@ const HISTORICO_BANCOS = {
     alertas: ['Conta usando limite bancário — R$ 569,20 negativos','Juros de limite acumulados jan–abr: R$ 156,16','Bradescard crescendo: R$2.507 → R$6.017 em abr'],
   },
   nubank: {
-    nome: 'Nubank PF', logo: 'https://logo.clearbit.com/nubank.com.br',
+    nome: 'Nubank PF', logo: 'https://www.google.com/s2/favicons?domain=nubank.com.br&sz=64',
     cor: '#820AD1', saldo_atual: 15.65,
     meses: [
       {mes:'Jan/26', entradas:25771.90, saidas:25571.90, saldo:200.00},
@@ -1205,7 +1206,7 @@ const HISTORICO_BANCOS = {
     alertas: ['Cartão PJ com fatura em aberto: R$ 578,70','Fatura PJ estava atrasada — R$ 68,55 de custo extra'],
   },
   xp: {
-    nome: 'XP Investimentos', logo: 'https://logo.clearbit.com/xpi.com.br',
+    nome: 'XP Investimentos', logo: 'https://www.google.com/s2/favicons?domain=xpi.com.br&sz=64',
     cor: '#FF6200', saldo_atual: 0.00,
     meses: [
       {mes:'Jan/26', entradas:3954.54, saidas:3954.04, saldo:0.50},
@@ -1397,33 +1398,37 @@ const HISTORICO_LEO = {
 
 // Saldos reais das contas (fonte: extratos)
 const SALDOS_CONTAS_REAIS = [
-  { nome: 'Itaú',     banco: 'Itaú',   logo: 'https://logo.clearbit.com/itau.com.br',   saldo: -569.20 },
-  { nome: 'Nubank',   banco: 'Nubank', logo: 'https://logo.clearbit.com/nubank.com.br',  saldo:   15.65 },
-  { nome: 'XP',       banco: 'XP',     logo: 'https://logo.clearbit.com/xpi.com.br',     saldo:    0.00 },
-  { nome: 'Nubank PJ',banco: 'Nubank', logo: 'https://logo.clearbit.com/nubank.com.br',  saldo:    0.00 },
+  { nome: 'Itaú',     banco: 'Itaú',   logo: 'https://www.google.com/s2/favicons?domain=itau.com.br&sz=64',   saldo: -569.20 },
+  { nome: 'Nubank',   banco: 'Nubank', logo: 'https://www.google.com/s2/favicons?domain=nubank.com.br&sz=64',  saldo:   15.65 },
+  { nome: 'XP',       banco: 'XP',     logo: 'https://www.google.com/s2/favicons?domain=xpi.com.br&sz=64',     saldo:    0.00 },
+  { nome: 'Nubank PJ',banco: 'Nubank', logo: 'https://www.google.com/s2/favicons?domain=nubank.com.br&sz=64',  saldo:    0.00 },
 ];
 
 // Mapa de logos por banco (usado em todo o app)
+// Logos via Google Favicon (tamanho 64px, muito mais confiável que Clearbit)
 const LOGO_MAP = {
-  'itaú':    'https://logo.clearbit.com/itau.com.br',
-  'itau':    'https://logo.clearbit.com/itau.com.br',
-  'nubank':  'https://logo.clearbit.com/nubank.com.br',
-  'xp':      'https://logo.clearbit.com/xpi.com.br',
-  'bradesco':'https://logo.clearbit.com/bradesco.com.br',
-  'santander':'https://logo.clearbit.com/santander.com.br',
-  'caixa':   'https://logo.clearbit.com/caixa.gov.br',
-  'inter':   'https://logo.clearbit.com/inter.co',
-  'c6':      'https://logo.clearbit.com/c6bank.com.br',
-  'c6 bank': 'https://logo.clearbit.com/c6bank.com.br',
-  'picpay':  'https://logo.clearbit.com/picpay.com',
-  'ticket':  'https://logo.clearbit.com/ticket.com.br',
-  'vivo':    'https://logo.clearbit.com/vivo.com.br',
-  'netflix': 'https://logo.clearbit.com/netflix.com',
-  'spotify': 'https://logo.clearbit.com/spotify.com',
-  'amazon':  'https://logo.clearbit.com/amazon.com',
-  'disney':  'https://logo.clearbit.com/disneyplus.com',
-  'apple':   'https://logo.clearbit.com/apple.com',
-  'google':  'https://logo.clearbit.com/google.com',
+  'itaú':     'https://www.google.com/s2/favicons?domain=itau.com.br&sz=64',
+  'itau':     'https://www.google.com/s2/favicons?domain=itau.com.br&sz=64',
+  'nubank':   'https://www.google.com/s2/favicons?domain=nubank.com.br&sz=64',
+  'xp':       'https://www.google.com/s2/favicons?domain=xpi.com.br&sz=64',
+  'bradesco': 'https://www.google.com/s2/favicons?domain=bradesco.com.br&sz=64',
+  'santander':'https://www.google.com/s2/favicons?domain=santander.com.br&sz=64',
+  'caixa':    'https://www.google.com/s2/favicons?domain=caixa.gov.br&sz=64',
+  'inter':    'https://www.google.com/s2/favicons?domain=inter.co&sz=64',
+  'c6':       'https://www.google.com/s2/favicons?domain=c6bank.com.br&sz=64',
+  'picpay':   'https://www.google.com/s2/favicons?domain=picpay.com&sz=64',
+  'ticket':   'https://www.google.com/s2/favicons?domain=ticket.com.br&sz=64',
+  'sodexo':   'https://www.google.com/s2/favicons?domain=sodexo.com.br&sz=64',
+  'alelo':    'https://www.google.com/s2/favicons?domain=alelo.com.br&sz=64',
+  'vivo':     'https://www.google.com/s2/favicons?domain=vivo.com.br&sz=64',
+  'netflix':  'https://www.google.com/s2/favicons?domain=netflix.com&sz=64',
+  'spotify':  'https://www.google.com/s2/favicons?domain=spotify.com&sz=64',
+  'amazon':   'https://www.google.com/s2/favicons?domain=amazon.com&sz=64',
+  'disney':   'https://www.google.com/s2/favicons?domain=disneyplus.com&sz=64',
+  'apple':    'https://www.google.com/s2/favicons?domain=apple.com&sz=64',
+  'google':   'https://www.google.com/s2/favicons?domain=google.com&sz=64',
+  'mercado':  'https://www.google.com/s2/favicons?domain=mercadopago.com&sz=64',
+  'picpay':   'https://www.google.com/s2/favicons?domain=picpay.com&sz=64',
 };
 
 function getLogoByNome(nome) {
@@ -1666,9 +1671,6 @@ async function addLancamento() {
     }
     toast(`✅ ${inserts.length} lançamentos criados até ${recAte}!`);
   } else {
-    const pagamento = document.getElementById('l-pagamento')?.value || '';
-    const parcelas  = document.getElementById('l-parcelas')?.value || '1';
-    const banco     = document.getElementById('l-banco')?.value || '';
     const { error } = await sb.from('lancamentos').insert({
       user_id: currentUser.id, lancado_por: nomeExibidoGlobal || currentUserNome,
       descricao: desc, valor: valorFinal,
@@ -1708,11 +1710,20 @@ async function carregarLancamentos() {
   const tipo = document.getElementById('f-lan-tipo')?.value || '';
   const cat  = document.getElementById('f-lan-cat')?.value || '';
 
-  let q = sb.from('lancamentos').select('*').eq('user_id', currentUser.id).order('data', {ascending:false});
+  const pessoaF = document.getElementById('f-lan-pessoa')?.value || '';
+
+  // Buscar todos os lançamentos do casal (RLS já permite)
+  let q = sb.from('lancamentos').select('*').order('data', {ascending:false});
   if (mes)  q = q.eq('mes', mes);
   if (tipo) q = q.eq('tipo', tipo);
   if (cat)  q = q.eq('categoria', cat);
-  q = q.limit(200);
+  // Filtro por pessoa
+  if (pessoaF === 'leo') {
+    q = q.eq('user_id', currentUser.id);
+  } else if (pessoaF === 'isa') {
+    q = q.neq('user_id', currentUser.id);
+  }
+  q = q.limit(500);
 
   const { data: lans, error } = await q;
   if (error) { console.error(error); return; }
@@ -1727,6 +1738,15 @@ async function carregarLancamentos() {
     <div class="card blue"><div class="card-label">Investimentos</div><div class="card-value blue">${BRL(inv)}</div></div>
     <div class="card ${ent-sai-inv>=0?'green':'red'}"><div class="card-label">Saldo</div><div class="card-value ${ent-sai-inv>=0?'green':'red'}">${BRL(ent-sai-inv)}</div></div>
   `;
+
+  // Atualizar título dinâmico
+  const pessoaAtualF = document.getElementById('f-lan-pessoa')?.value || '';
+  const listTitle = document.getElementById('lan-list-title');
+  if (listTitle) {
+    listTitle.textContent = pessoaAtualF === 'leo' ? `Lançamentos de Léo`
+      : pessoaAtualF === 'isa' ? `Lançamentos de Isa`
+      : `Lançamentos do Casal`;
+  }
 
   const tbody = document.getElementById('t-lancamentos');
   if (!lans || !lans.length) {
